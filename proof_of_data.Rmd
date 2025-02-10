@@ -1,0 +1,33 @@
+---
+title: "Proof of Data for Findor et al Replication"
+author: "Isabella Mullen"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+### Load Data for Study 2
+
+```{r}
+library(haven)
+
+dat <- read_sav("/Users/bellamullen/Documents/GITHUB/replication_project/Study2.sav")
+head(dat)  # Preview first rows
+```
+
+###A histogram of the dependent variable
+
+```{r}
+
+```
+
+###A correlation matrix for the DV and IVs that the original authors included in the model you are replicating
+
+```{r}
+
+```
+
+###A visual or tabular depiction of the missingness in the data from part (2); see p. 251-255 of the text.
+
+```{r}
+
+```
