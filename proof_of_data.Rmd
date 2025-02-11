@@ -4,19 +4,200 @@ author: "Isabella Mullen"
 date: "`r Sys.Date()`"
 output: html_document
 ---
+### load package
+```{r}
+library(haven)
+library(lessR)
+library(dplyr)
+library(tidyr)
+library(rmarkdown)
+library(reshape2)
+library(rstatix)
+library(kableExtra)
+library(moments)
+library(tidyverse);library(readxl);library(foreign)
+library(ggplot2);library(gridExtra)
+library(MASS)
+
+
+set.seed(42)
+
+options(scipen=999, digits=3)
+
+paste_na <- function(..., sep = " ") {
+  L <- list(...)
+  L <- lapply(
+    L,
+    function(x) {
+      x[is.na(x)] <- ""
+      x
+    }
+  )
+  out <- gsub(
+    paste0("(^", sep, "|", sep, "$)"), "",
+    gsub(
+      paste0(sep, sep), sep,
+      do.call(paste, c(L, list(sep = sep)))
+    )
+  )
+  is.na(out) <- out == ""
+  return(out)
+}
+```
 
 ### Load Data for Study 2
 
 ```{r}
-library(haven)
-
-dat <- read_sav("/Users/bellamullen/Documents/GITHUB/replication_project/Study2.sav")
-head(dat)  # Preview first rows
+s2 <- read_sav("/Users/bellamullen/Documents/GITHUB/replication_project/Study2.sav")
+head(s2)  # Preview first rows
 ```
 
+### Data prep
+
+```{r, message=FALSE, results='hide'}
+s2$home= factor(s2$home, levels = c(1, 2,3,4), labels = c("home-answered","away-notanswered","home-return", "away-return"))
+s2$consent= factor(s2$consent, levels = c(1, 2), labels = c("yes","no"))
+s2$etnic_ascr= factor(s2$etnic_ascr, levels = c(1, 2), labels = c("slovak","roma"))
+s2$etnicita= factor(s2$etnicita, levels = c(1, 2,3), labels = c("slovak","roma","other"))
+s2$age <- as.numeric(s2$age)
+
+#s2 <- lessR::recode(age, new_vars="roky_", old=9:72, new=1996:1933, data=s2)
+s2 <- s2 %>%
+  dplyr::mutate(roky_ = dplyr::recode(age, !!!setNames(1996:1933, 9:72)))
+
+s2$years <- 2019 - s2$roky_
+s2$gender <- factor(s2$gender, levels = c(1, 2), labels = c("Male","Female"))
+s2_consent <- dplyr::filter(s2, consent=="yes")
+s2_consent <- dplyr::filter(s2_consent, etnic_ascr != "NA")
+s2_consent <- dplyr::filter(s2_consent, eurofondy_iv<5 & skolka_iv<5 & skolka_agree<5 & skolka_vote<5 & skolka_norms < 5 & control < 5 & suma < 5 & praca < 5 & potreba<5 & pila <5 )
+```
+
+## Descriptives {.tabset}
+### Main outcomes {.tabset}
+```{r}
+s2_consent %>% dplyr::group_by(etnic_ascr) %>% dplyr::summarise(N = length(control), Min=min(control,na.rm= TRUE),Q1 = quantile(control,probs = .25,na.rm = TRUE),Median = median(control, na.rm = TRUE),Q3 = quantile(control,probs = .75,na.rm = TRUE),Max = max(control,na.rm = TRUE),Mean = mean(control, na.rm = TRUE),SD = sd(control, na.rm = TRUE), Skew = skewness(control, na.rm = TRUE), Kurtosis = kurtosis(control, na.rm = TRUE)) -> s2_control
+
+knitr::kable(s2_control, caption = "Study 2 - control")%>%
+  kable_styling(full_width = F)
+
+
+s2_consent %>% dplyr::group_by(etnic_ascr) %>% dplyr::summarise(N = length(suma), Min=min(suma,na.rm= TRUE),Q1 = quantile(suma,probs = .25,na.rm = TRUE),Median = median(suma, na.rm = TRUE),Q3 = quantile(suma,probs = .75,na.rm = TRUE),Max = max(suma,na.rm = TRUE),Mean = mean(suma, na.rm = TRUE),SD = sd(suma, na.rm = TRUE), Skew = skewness(suma, na.rm = TRUE), Kurtosis = kurtosis(suma, na.rm = TRUE)) -> s2_equal
+
+knitr::kable(s2_equal, caption = "Study 2 - equality")%>%
+  kable_styling(full_width = F)
+
+s2_consent %>% dplyr::group_by(etnic_ascr) %>% dplyr::summarise(N = length(praca), Min=min(praca,na.rm= TRUE),Q1 = quantile(praca,probs = .25,na.rm = TRUE),Median = median(praca, na.rm = TRUE),Q3 = quantile(praca,probs = .75,na.rm = TRUE),Max = max(praca,na.rm = TRUE),Mean = mean(praca, na.rm = TRUE),SD = sd(praca, na.rm = TRUE), Skew = skewness(praca, na.rm = TRUE), Kurtosis = kurtosis(praca, na.rm = TRUE)) -> s2_prop
+
+knitr::kable(s2_prop, caption = "Study 2 - proportionality")%>%
+  kable_styling(full_width = F)
+
+s2_consent %>% dplyr::group_by(etnic_ascr) %>% dplyr::summarise(N = length(potreba), Min=min(potreba,na.rm= TRUE),Q1 = quantile(potreba,probs = .25,na.rm = TRUE),Median = median(potreba, na.rm = TRUE),Q3 = quantile(potreba,probs = .75,na.rm = TRUE),Max = max(potreba,na.rm = TRUE),Mean = mean(potreba, na.rm = TRUE),SD = sd(potreba, na.rm = TRUE), Skew = skewness(potreba, na.rm = TRUE), Kurtosis = kurtosis(potreba, na.rm = TRUE)) -> s2_need
+
+knitr::kable(s2_need, caption = "Study 2 - need")%>%
+  kable_styling(full_width = F)
+
+```
+
+```{r}
+
+s2_consent <- mutate(s2_consent, ID = row_number())
+
+s2_mains <- melt(s2_consent,
+        # ID variables - all the variables to keep but not split apart on
+    id.vars=c("etnic_ascr", "ID","eurofondy_iv","skolka_iv" ),
+        # The source columns
+    measure.vars=c("control", "suma", "praca","potreba","pila"),
+        # Name of the destination column that will identify the original
+        # column that the measurement came from
+    variable.name="condition",
+    value.name="measurement"
+)
+
+s2_mains <- filter(s2_mains, condition!="pila") 
+
+s2_dvs <- s2_mains %>%
+  group_by(etnic_ascr,condition)%>%
+  dplyr::select(-ID:-skolka_iv) %>%
+  get_summary_stats(type = c("mean_sd"))%>%
+  dplyr::select(-variable)%>%
+  dplyr::mutate(condition = dplyr::recode(condition,
+    "control" = "Control",
+    "suma" = "Equality",
+    "praca" = "Reciprocity",
+    "potreba" = "Need"))%>%
+  dplyr::mutate(sd = round(sd,2))
+      
+
+dvstt <- s2_mains %>% 
+#  pivot_longer(contains("att_"))%>% 
+    group_by(etnic_ascr)%>% 
+    t_test(measurement~condition, detailed = T)      
+
+```
+
+### Sample characteristics
+```{r}
+s2_consent_gender <- s2_consent %>% group_by(gender) %>% 
+dplyr::summarise(n = n()) %>%
+  mutate(freq = n / sum(n))
+s2_consent_gender$freq <- round(s2_consent_gender$freq, 3)
+
+s2_consent_gender%>%
+kable(caption = "Gender")%>%
+  kable_styling(full_width = F)
+
+s2_consent_age <- s2_consent %>% dplyr::summarise(Min=min(years,na.rm= TRUE),Q1 = quantile(years,probs = .25,na.rm = TRUE),Median = median(years, na.rm = TRUE),Q3 = quantile(years,probs = .75,na.rm = TRUE),Max = max(years,na.rm = TRUE),Mean = round(mean(years, na.rm = TRUE),3),SD = round(sd(years, na.rm = TRUE),2),n = n(),Missing = sum(is.na(years))) 
+
+s2_consent_age %>%
+  kable(caption = "Age") %>%
+  kable_styling(full_width = F)
+
+s2_consent_etnic <- s2_consent %>% group_by(etnic_ascr) %>% 
+dplyr::summarise(n = n()) %>%
+  mutate(freq = n / sum(n))
+s2_consent_etnic$freq <- round(s2_consent_etnic$freq, 3)
+
+s2_consent_etnic%>%
+kable(caption = "Ascribed ethnicity")%>%
+  kable_styling(full_width = F)
+
+s2_consent_etnic_self <- s2_consent %>% group_by(etnicita) %>% 
+dplyr::summarise(n = n()) %>%
+  mutate(freq = n / sum(n))
+s2_consent_etnic_self$freq <- round(s2_consent_etnic_self$freq, 3)
+
+s2_consent_etnic_self%>%
+kable(caption = "Self-reported ethnicity")%>%
+  kable_styling(full_width = F)
+```
 ###A histogram of the dependent variable
 
 ```{r}
+ggplot(s2_dvs, aes(x = condition, y = mean, fill = etnic_ascr)) +
+  geom_bar(stat = "identity", position = "dodge", color = "black") +
+  labs(title = "Mean Values by Condition and Ethnicity",
+       x = "Condition",
+       y = "Mean",
+       fill = "Ethnicity") +
+  theme_minimal()
+```
+```{r}
+# Plot for Slovak
+ggplot(subset(s2_dvs, etnic_ascr == "slovak"), aes(x = condition, y = mean, fill = condition)) +
+  geom_bar(stat = "identity", color = "black", width = 0.6) +
+  labs(title = "Mean Values by Condition (Slovak)",
+       x = "Condition",
+       y = "Mean") +
+  theme_minimal()
+
+# Plot for Roma
+ggplot(subset(s2_dvs, etnic_ascr == "roma"), aes(x = condition, y = mean, fill = condition)) +
+  geom_bar(stat = "identity", color = "black", width = 0.6) +
+  labs(title = "Mean Values by Condition (Roma)",
+       x = "Condition",
+       y = "Mean") +
+  theme_minimal()
+
 
 ```
 
