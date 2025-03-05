@@ -72,7 +72,7 @@ Materials, data, code accompanying the article "Equality, Reciprocity, or Need? 
 ## Data {.tabset}
 ### Data load
 ```{r}
-s1 <- import("data/Study1.sav")
+s1 <- import("/Users/bellamullen/Documents/GITHUB/Findor2023_Replication/original_materials/data/Study1.sav")
 ```
 
 ### Data prep
@@ -401,7 +401,7 @@ plot_model(lms12, type = "pred", terms = c("group", "income")) + theme_classic()
 # 
 # export(s2, "Study2.sav")
 
-s2 <- import("data/Study2.sav")
+s2 <- import("/Users/bellamullen/Documents/GITHUB/Findor2023_Replication/original_materials/data/Study2.sav")
 
 
 ```
@@ -586,7 +586,7 @@ kable(caption = "Predicted average agreement")%>%
 ## Data {.tabset}
 ### Data load
 ```{r}
-s3 <- import("data/Study3.sav")
+s3 <- import("/Users/bellamullen/Documents/GITHUB/Findor2023_Replication/original_materials/data/Study3.sav")
 ```
 
 ### Data prep

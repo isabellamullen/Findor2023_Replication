@@ -1,0 +1,316 @@
+---
+title: "replication_table3"
+output: pdf_document
+date: "2025-03-05"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(rio)
+library(dplyr)
+library(PerformanceAnalytics)
+library(kableExtra)
+library(psych)
+library(ggplot2)
+library(jmv)
+library(magick)
+library(report)
+library(reshape2)
+library(ordinal)
+library(RVAideMemoire)
+library(emmeans)
+library(effectsize)
+library(repmod)
+library(MANOVA.RM)
+library(ggrepel)
+library(matrixTests)
+library(tidyverse)
+library(lessR)
+library(rstatix)
+library(multcomp)
+library(jtools)
+library(sjPlot)
+
+#added
+library(ggdist)
+
+
+
+set.seed(42)
+
+options(scipen=999, digits=3)
+
+#This function concatenates multiple vectors element-wise while handling NA values by replacing them with empty strings.
+#Works like paste(), but ensures that NA values are treated as missing (not "NA" as paste() would normally do).
+#Removes unnecessary spaces or separators from the output.
+#Converts empty results back to NA.
+
+paste_na <- function(..., sep = " ") {
+  L <- list(...)
+  L <- lapply(
+    L,
+    function(x) {
+      x[is.na(x)] <- ""
+      x
+    }
+  )
+  out <- gsub(
+    paste0("(^", sep, "|", sep, "$)"), "",
+    gsub(
+      paste0(sep, sep), sep,
+      do.call(paste, c(L, list(sep = sep)))
+    )
+  )
+  is.na(out) <- out == ""
+  return(out)
+}
+
+
+```
+# Study 3 {.tabset}
+## Data {.tabset}
+### Data load
+```{r}
+s3 <- import("/Users/bellamullen/Documents/GITHUB/Findor2023_Replication/original_materials/data/Study3.sav")
+```
+
+### Data prep
+```{r, message=FALSE, results='hide'}
+s3$group= factor(s3$SKUPINA, levels = c(1, 2,3,4), labels = c("Control","Equality", "Proportionality", "Need"))
+s3$SEX <- factor(s3$SEX, levels = c(1, 2), labels = c("Male","Female"))
+s3$AGECAT= factor(s3$AGECAT, levels = c(1,2,3,4,5,6), labels = c("18-24","25-34","35-44", "45-54","55-64","65+"))
+s3$EDU= factor(s3$EDU, levels = c(1, 2,3,4), labels = c("Primary","Secondary (no diploma)","Secondary (complete)", "University"))
+s3$SIZE= factor(s3$SIZE, levels = c(1, 2,3,4,5), labels = c("less than 1k","1k-4 999","5k-19 999", "20k - 99 999","100k+"))
+s3$REG= factor(s3$REG, levels = c(1, 2,3,4,5,6,7,8), labels = c("Bratislavsky","Trnavsky","Trenciansky", "Nitriansky","Zilinsky","Banskobystricky","Presovsky","Kosicky"))
+
+
+s3$income <- car::recode(s3$PINCOME,"'1'='below median';'2'='below median';'8'='NA';'9'='NA'; else = 'above median'")
+```
+
+## Descriptives {.tabset}
+### Main outcomes {.tabset}
+```{r}
+s3 %>% dplyr::group_by(group) %>% dplyr::summarise(N = length(E3), Min=min(E3,na.rm= TRUE),Q1 = quantile(E3,probs = .25,na.rm = TRUE),Median = median(E3, na.rm = TRUE),Q3 = quantile(E3,probs = .75,na.rm = TRUE),Max = max(E3,na.rm = TRUE),Mean = mean(E3, na.rm = TRUE),SD = sd(E3, na.rm = TRUE), Skew = skewness(E3, na.rm = TRUE), Kurtosis = kurtosis(E3, na.rm = TRUE)) -> s3_personal
+
+knitr::kable(s3_personal, caption = "Study 3 - personal agreement")%>%
+  kable_styling(full_width = F)
+
+s3 %>% dplyr::group_by(group) %>% dplyr::summarise(N = length(E4), Min=min(E4,na.rm= TRUE),Q1 = quantile(E4,probs = .25,na.rm = TRUE),Median = median(E4, na.rm = TRUE),Q3 = quantile(E4,probs = .75,na.rm = TRUE),Max = max(E4,na.rm = TRUE),Mean = mean(E4, na.rm = TRUE),SD = sd(E4, na.rm = TRUE), Skew = skewness(E4, na.rm = TRUE), Kurtosis = kurtosis(E4, na.rm = TRUE)) -> s3_majority
+
+knitr::kable(s3_majority, caption = "Study 3 - agreement of majority")%>%
+  kable_styling(full_width = F)
+```
+
+### Sample characteristics
+```{r}
+s3_gender <- s3 %>% group_by(SEX) %>% 
+dplyr::summarise(n = n()) %>%
+  mutate(freq = n / sum(n))
+s3_gender$freq <- round(s3_gender$freq, 3)
+
+s3_gender%>%
+kable(caption = "Gender")%>%
+  kable_styling(full_width = F)
+
+s3_age <- s3 %>% dplyr::summarise(Min=min(AGE,na.rm= TRUE),Q1 = quantile(AGE,probs = .25,na.rm = TRUE),Median = median(AGE, na.rm = TRUE),Q3 = quantile(AGE,probs = .75,na.rm = TRUE),Max = max(AGE,na.rm = TRUE),Mean = round(mean(AGE, na.rm = TRUE),3),SD = round(sd(AGE, na.rm = TRUE),2),n = n(),Missing = sum(is.na(AGE))) 
+
+s3_age %>%
+  kable(caption = "Age") %>%
+  kable_styling(full_width = F)
+
+s3_agecat  <- s3 %>% group_by(AGECAT) %>% 
+dplyr::summarise(n = n()) %>%
+  mutate(freq = n / sum(n))
+s3_agecat$freq <- round(s3_agecat$freq, 3)
+
+s3_agecat%>%
+kable(caption = "Age categories")%>%
+  kable_styling(full_width = F)
+
+s3_educat <- s3 %>% group_by(EDU) %>% 
+dplyr::summarise(n = n()) %>%
+  mutate(freq = n / sum(n))
+s3_educat$freq <- round(s3_educat$freq, 3)
+
+s3_educat%>%
+kable(caption = "Education categories")%>%
+  kable_styling(full_width = F)
+
+s3_reg <- s3 %>% group_by(REG) %>% 
+dplyr::summarise(n = n()) %>%
+  mutate(freq = n / sum(n))
+s3_reg$freq <- round(s3_reg$freq, 3)
+
+s3_reg%>%
+kable(caption = "Region")%>%
+  kable_styling(full_width = F)
+
+s3_municip <- s3 %>% group_by(SIZE) %>% 
+dplyr::summarise(n = n()) %>%
+  mutate(freq = n / sum(n))
+s3_municip$freq <- round(s3_municip$freq, 3)
+
+s3_municip%>%
+kable(caption = "Municipality size")%>%
+  kable_styling(full_width = F)
+```
+
+### Randomization checks
+```{r}
+s3_check <- dplyr::select(s3, SEX:PINCOME, -AGECAT, group)
+s3_check <- mutate_all(s3_check, function(x) as.numeric(x))
+
+s3_check <- col_oneway_welch(s3_check[,1:5], s3_check$group)
+
+s3_check %>%
+  kable(caption = "Randomization checks overall") %>%
+  kable_styling(full_width = F)
+
+table(s3$SEX, s3$group)
+```
+```{r}
+source("https://gist.githubusercontent.com/benmarwick/2a1bb0133ff568cbe28d/raw/fb53bd97121f7f9ce947837ef1a4c65a73bffb3f/geom_flat_violin.R")
+
+raincloud_theme = theme(
+text = element_text(size = 11),
+axis.title.x = element_blank(),
+axis.title.y = element_text(size = 11),
+axis.text = element_text(size = 11),
+axis.text.x = element_text(vjust = 2),
+legend.title=element_text(size=15),
+legend.text=element_text(size=15),
+legend.position = "right",
+plot.title = element_text(lineheight=.7, face="bold", size = 15),
+panel.border = element_blank(),
+panel.grid.minor = element_blank(),
+panel.grid.major = element_blank(),
+axis.line.x = element_line(colour = 'black', size=0.5, linetype='solid'),
+axis.line.y = element_line(colour = 'black', size=0.5, linetype='solid'))
+```
+
+## Plots {.tabset}
+### Main outcomes
+```{r}
+descriptives = psych::describeBy(x = s3$E3, group = s3$group)
+group = c("Control","Equality", "Proportionality", "Need")
+means = c(descriptives$'Control'$mean, descriptives$'Equality'$mean,descriptives$'Proportionality'$mean, descriptives$'Need'$mean)
+se = c(descriptives$'Control'$se, descriptives$'Equality'$se,descriptives$'Proportionality'$se, descriptives$'Need'$se)
+plotdat=data.frame(group, means, se)
+
+(s3_personal <- ggplot(data = s3, aes(y = E3, x = group, fill = group)) + geom_flat_violin(data = s3, position = position_nudge(x = .2, y = 0), alpha = .5) + geom_point(data = s3, aes(y = E3, color = group), position = position_jitter(width = .15,height = .15), size = .5, alpha = 0.5) + geom_point(data = plotdat, aes(x = group, y = means), position = position_nudge(x = 0.35), size = 1,inherit.aes = FALSE ) + geom_errorbar(inherit.aes=FALSE, data = plotdat, aes(x = group, ymax= means+(1.96*se), ymin=means+(-1.96*se), y=means), position = position_nudge(x = 0.35), width = 0.3) + expand_limits(x = 5) + guides(fill = FALSE) + guides(color = FALSE) + scale_color_grey() + scale_fill_grey() +
+    #scale_color_brewer(palette = "Accent") +
+    #scale_fill_brewer(palette = "Accent") +
+    theme_bw() + raincloud_theme + labs(y = "Personal agreement with building social housing \n(1 = completely disagree)") + scale_x_discrete(expand = c(0.15,0.2),labels=c("Control","Equality", 'Proportionality'="Reciprocity", "Need")))
+
+#ggsave("plot.png", width = 6, height = 4)
+
+descriptives = psych::describeBy(x = s3$E4, group = s3$group)
+group = c("Control","Equality", "Proportionality", "Need")
+means = c(descriptives$'Control'$mean, descriptives$'Equality'$mean,descriptives$'Proportionality'$mean, descriptives$'Need'$mean)
+se = c(descriptives$'Control'$se, descriptives$'Equality'$se,descriptives$'Proportionality'$se, descriptives$'Need'$se)
+plotdat=data.frame(group, means, se)
+
+(s3_majority <- ggplot(data = s3, aes(y = E4, x = group, fill = group)) + geom_flat_violin(data = s3, position = position_nudge(x = .2, y = 0), alpha = .5) + geom_point(data = s3, aes(y = E4, color = group), position = position_jitter(width = .15,height = .15), size = .5, alpha = 0.5) + geom_point(data = plotdat, aes(x = group, y = means), position = position_nudge(x = 0.35), size = 1,inherit.aes = FALSE ) + geom_errorbar(inherit.aes=FALSE, data = plotdat, aes(x = group, ymax= means+(1.96*se), ymin=means+(-1.96*se), y=means), position = position_nudge(x = 0.35), width = 0.3) + expand_limits(x = 5) + guides(fill = FALSE) + guides(color = FALSE) + scale_color_grey() + scale_fill_grey() +
+    #scale_color_brewer(palette = "Accent") +
+    #scale_fill_brewer(palette = "Accent") +
+    theme_bw() + raincloud_theme + labs(y = " Majority agreement with building social housing \n(1 = completely disagree)") + scale_x_discrete(expand = c(0.15,0.2),labels=c("Control","Equality", 'Proportionality'="Reciprocity", "Need")))
+
+#ggsave("plot.png", width = 6, height = 4)
+```
+
+## Main analysis - separate ordinal regression {.tabset}
+
+```{r}
+
+s3$E1 <- as.ordered(s3$E1)
+s3$E2 <- as.ordered(s3$E2)
+s3$E3 <- as.ordered(s3$E3)
+s3$E4 <- as.ordered(s3$E4)
+
+
+s3personal  <- polr(E3 ~ group, data = s3, Hess=TRUE)
+summary(s3personal)
+ctable <- coef(summary(s3personal))
+p <- pnorm(abs(ctable[, "t value"]), lower.tail = FALSE) * 2
+(ctable <- cbind(ctable, "p value" = p))
+ci <- confint(s3personal)
+exp(cbind(OR = coef(s3personal), ci))
+
+s3majority  <- polr(E4 ~ group, data = s3, Hess=TRUE)
+summary(s3majority)
+ctable <- coef(summary(s3majority))
+p <- pnorm(abs(ctable[, "t value"]), lower.tail = FALSE) * 2
+(ctable <- cbind(ctable, "p value" = p))
+ci <- confint(s3majority)
+exp(cbind(OR = coef(s3majority), ci))
+
+
+# Re-level to have Proportionality as baseline
+
+s3$group <- relevel(s3$group, ref = "Proportionality")
+s3personal  <- polr(E3 ~ group, data = s3, Hess=TRUE)
+summary(s3personal)
+ctable <- coef(summary(s3personal))
+p <- pnorm(abs(ctable[, "t value"]), lower.tail = FALSE) * 2
+(ctable <- cbind(ctable, "p value" = p))
+ci <- confint(s3personal)
+exp(cbind(OR = coef(s3personal), ci))
+
+
+s3majority  <- polr(E4 ~ group, data = s3, Hess=TRUE)
+summary(s3majority)
+ctable <- coef(summary(s3majority))
+p <- pnorm(abs(ctable[, "t value"]), lower.tail = FALSE) * 2
+(ctable <- cbind(ctable, "p value" = p))
+ci <- confint(s3majority)
+exp(cbind(OR = coef(s3majority), ci))
+
+```
+
+
+## Main analysis - ordinal regression, interactions with income {.tabset}
+
+```{r}
+s3income <- dplyr::filter(s3, income != 'NA')
+
+s3income$group <- relevel(s3income$group, ref = "Control")
+
+s3income3  <- polr(E3 ~ group * income, data = s3income, Hess=TRUE)
+summary(s3income3)
+ctable <- coef(summary(s3income3))
+p <- pnorm(abs(ctable[, "t value"]), lower.tail = FALSE) * 2
+(ctable <- cbind(ctable, "p value" = p))
+ci <- confint(s3income3)
+exp(cbind(OR = coef(s3income3), ci))
+
+
+s3income4  <- polr(E4 ~ group * income, data = s3income, Hess=TRUE)
+summary(s3income4)
+ctable <- coef(summary(s3income4))
+p <- pnorm(abs(ctable[, "t value"]), lower.tail = FALSE) * 2
+(ctable <- cbind(ctable, "p value" = p))
+ci <- confint(s3income4)
+exp(cbind(OR = coef(s3income4), ci))
+
+```
+
+
+
+Interaction with EU fund attitudes and perceived competitiveness
+```{r}
+s3$E1_coll <- car::recode(s3$E1,"'1'='2'")
+s3$E2_coll <- car::recode(s3$E2,"'1'='2'")
+
+s3$E1_coll <- as.ordered(s3$E1_coll)
+s3$E2_coll <- as.ordered(s3$E2_coll)
+
+s3_fit_all <- MANOVA.wide(cbind(E3, E4) ~ group * E1_coll * E2_coll, data = s3, iter = 1000, CPU = 1)
+
+summary(s3_fit_all)
+
+simCI(s3_fit_all, contrast = "pairwise", type = "Tukey", interaction = F, factor ="group")
+
+```
+
+
