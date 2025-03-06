@@ -31,6 +31,7 @@ library(rstatix)
 library(multcomp)
 library(jtools)
 library(sjPlot)
+library(MASS)
 
 #added
 library(ggdist)
@@ -91,19 +92,29 @@ s3$income <- car::recode(s3$PINCOME,"'1'='below median';'2'='below median';'8'='
 ## Descriptives {.tabset}
 ### Main outcomes {.tabset}
 ```{r}
+#group (Control, Equality, Proportionality, Need) and summary statistics for E3 (Agreement with the statement | Construction of an apartment building)
 s3 %>% dplyr::group_by(group) %>% dplyr::summarise(N = length(E3), Min=min(E3,na.rm= TRUE),Q1 = quantile(E3,probs = .25,na.rm = TRUE),Median = median(E3, na.rm = TRUE),Q3 = quantile(E3,probs = .75,na.rm = TRUE),Max = max(E3,na.rm = TRUE),Mean = mean(E3, na.rm = TRUE),SD = sd(E3, na.rm = TRUE), Skew = skewness(E3, na.rm = TRUE), Kurtosis = kurtosis(E3, na.rm = TRUE)) -> s3_personal
 
+# Display summary statistics in a table (table A19 from paper)
 knitr::kable(s3_personal, caption = "Study 3 - personal agreement")%>%
   kable_styling(full_width = F)
+```
 
+```{r}
+#group (Control, Equality, Proportionality, Need) and summary statistics for E4 (Majority agreement with the statement | Construction of an apartment building)
+#what is the difference between E3(personal agreement) and E4 (majority agreement)
 s3 %>% dplyr::group_by(group) %>% dplyr::summarise(N = length(E4), Min=min(E4,na.rm= TRUE),Q1 = quantile(E4,probs = .25,na.rm = TRUE),Median = median(E4, na.rm = TRUE),Q3 = quantile(E4,probs = .75,na.rm = TRUE),Max = max(E4,na.rm = TRUE),Mean = mean(E4, na.rm = TRUE),SD = sd(E4, na.rm = TRUE), Skew = skewness(E4, na.rm = TRUE), Kurtosis = kurtosis(E4, na.rm = TRUE)) -> s3_majority
 
+#table (A20 from paper)
 knitr::kable(s3_majority, caption = "Study 3 - agreement of majority")%>%
   kable_styling(full_width = F)
 ```
 
 ### Sample characteristics
 ```{r}
+#script summarizes demographic variables
+
+#Gender Distribution
 s3_gender <- s3 %>% group_by(SEX) %>% 
 dplyr::summarise(n = n()) %>%
   mutate(freq = n / sum(n))
@@ -112,13 +123,19 @@ s3_gender$freq <- round(s3_gender$freq, 3)
 s3_gender%>%
 kable(caption = "Gender")%>%
   kable_styling(full_width = F)
+```
 
+```{r}
+#Age Summary Statistics
 s3_age <- s3 %>% dplyr::summarise(Min=min(AGE,na.rm= TRUE),Q1 = quantile(AGE,probs = .25,na.rm = TRUE),Median = median(AGE, na.rm = TRUE),Q3 = quantile(AGE,probs = .75,na.rm = TRUE),Max = max(AGE,na.rm = TRUE),Mean = round(mean(AGE, na.rm = TRUE),3),SD = round(sd(AGE, na.rm = TRUE),2),n = n(),Missing = sum(is.na(AGE))) 
 
 s3_age %>%
   kable(caption = "Age") %>%
   kable_styling(full_width = F)
+```
 
+```{r}
+#Age Categories Distribution
 s3_agecat  <- s3 %>% group_by(AGECAT) %>% 
 dplyr::summarise(n = n()) %>%
   mutate(freq = n / sum(n))
@@ -127,7 +144,10 @@ s3_agecat$freq <- round(s3_agecat$freq, 3)
 s3_agecat%>%
 kable(caption = "Age categories")%>%
   kable_styling(full_width = F)
+```
 
+```{r}
+#Education Level Distribution
 s3_educat <- s3 %>% group_by(EDU) %>% 
 dplyr::summarise(n = n()) %>%
   mutate(freq = n / sum(n))
@@ -136,7 +156,10 @@ s3_educat$freq <- round(s3_educat$freq, 3)
 s3_educat%>%
 kable(caption = "Education categories")%>%
   kable_styling(full_width = F)
+```
 
+```{r}
+#Region Distribution
 s3_reg <- s3 %>% group_by(REG) %>% 
 dplyr::summarise(n = n()) %>%
   mutate(freq = n / sum(n))
@@ -145,7 +168,10 @@ s3_reg$freq <- round(s3_reg$freq, 3)
 s3_reg%>%
 kable(caption = "Region")%>%
   kable_styling(full_width = F)
+```
 
+```{r}
+# Municipality Size Distribution
 s3_municip <- s3 %>% group_by(SIZE) %>% 
 dplyr::summarise(n = n()) %>%
   mutate(freq = n / sum(n))
@@ -158,6 +184,12 @@ kable(caption = "Municipality size")%>%
 
 ### Randomization checks
 ```{r}
+
+# Extracts relevant demographic variables (SEX, PINCOME, group) and converts them to numeric.
+# Performs Welch’s ANOVA to test if these variables significantly differ across groups.
+# Formats and displays the ANOVA results in a clean table.
+# Creates a contingency table to check for gender distribution across groups.
+
 s3_check <- dplyr::select(s3, SEX:PINCOME, -AGECAT, group)
 s3_check <- mutate_all(s3_check, function(x) as.numeric(x))
 
@@ -169,6 +201,7 @@ s3_check %>%
 
 table(s3$SEX, s3$group)
 ```
+
 ```{r}
 source("https://gist.githubusercontent.com/benmarwick/2a1bb0133ff568cbe28d/raw/fb53bd97121f7f9ce947837ef1a4c65a73bffb3f/geom_flat_violin.R")
 
@@ -222,33 +255,57 @@ plotdat=data.frame(group, means, se)
 ## Main analysis - separate ordinal regression {.tabset}
 
 ```{r}
+#ordered logistic regression
 
+#ordinal categorical variables
 s3$E1 <- as.ordered(s3$E1)
 s3$E2 <- as.ordered(s3$E2)
 s3$E3 <- as.ordered(s3$E3)
 s3$E4 <- as.ordered(s3$E4)
 
-
+#Fit Ordered Logistic Regression for E3
+#(personal agreement with social housing) is the dependent variable
+#group (Control, Equality, Reciprocity, Need) is the independent variable (predictor)
 s3personal  <- polr(E3 ~ group, data = s3, Hess=TRUE)
 summary(s3personal)
+
+#Extract Coefficients and Compute p-values
 ctable <- coef(summary(s3personal))
 p <- pnorm(abs(ctable[, "t value"]), lower.tail = FALSE) * 2
 (ctable <- cbind(ctable, "p value" = p))
+
+#Compute Confidence Intervals and Odds Ratios
 ci <- confint(s3personal)
 exp(cbind(OR = coef(s3personal), ci))
 
+```
+
+```{r}
+#Fit Ordered Logistic Regression for E4
+#same ordered logistic regression for E4 (majority agreement).
 s3majority  <- polr(E4 ~ group, data = s3, Hess=TRUE)
 summary(s3majority)
+
+#Extract Coefficients and Compute p-values
 ctable <- coef(summary(s3majority))
 p <- pnorm(abs(ctable[, "t value"]), lower.tail = FALSE) * 2
 (ctable <- cbind(ctable, "p value" = p))
+
+# Compute Confidence Intervals and Odds Ratios
 ci <- confint(s3majority)
 exp(cbind(OR = coef(s3majority), ci))
+```
 
-
+```{r}
 # Re-level to have Proportionality as baseline
+#Changes the baseline category from the default (likely "Control") to "Proportionality".
+#This allows all comparisons to be made against "Proportionality" instead of another group.
+#what is proportionality
 
 s3$group <- relevel(s3$group, ref = "Proportionality")
+
+#logistic
+#Re-run Ordered Logistic Regression with New Baseline
 s3personal  <- polr(E3 ~ group, data = s3, Hess=TRUE)
 summary(s3personal)
 ctable <- coef(summary(s3personal))
@@ -257,7 +314,10 @@ p <- pnorm(abs(ctable[, "t value"]), lower.tail = FALSE) * 2
 ci <- confint(s3personal)
 exp(cbind(OR = coef(s3personal), ci))
 
+```
 
+```{r}
+#repeat for E4 (majority agreement)
 s3majority  <- polr(E4 ~ group, data = s3, Hess=TRUE)
 summary(s3majority)
 ctable <- coef(summary(s3majority))
@@ -272,19 +332,34 @@ exp(cbind(OR = coef(s3majority), ci))
 ## Main analysis - ordinal regression, interactions with income {.tabset}
 
 ```{r}
+# Remove NA Values in income
 s3income <- dplyr::filter(s3, income != 'NA')
 
+#Set "Control" as the Reference Group
 s3income$group <- relevel(s3income$group, ref = "Control")
 
+#Fit Ordered Logistic Regression for E3 (Personal Agreement)
+#group * income indicates an interaction effect between group and income.
 s3income3  <- polr(E3 ~ group * income, data = s3income, Hess=TRUE)
 summary(s3income3)
+
+
 ctable <- coef(summary(s3income3))
 p <- pnorm(abs(ctable[, "t value"]), lower.tail = FALSE) * 2
 (ctable <- cbind(ctable, "p value" = p))
 ci <- confint(s3income3)
 exp(cbind(OR = coef(s3income3), ci))
 
+```
 
+```{r}
+# Remove NA Values in income
+s3income <- dplyr::filter(s3, income != 'NA')
+
+#Set "Control" as the Reference Group
+s3income$group <- relevel(s3income$group, ref = "Control")
+
+#Repeat for E4 (Majority Agreement)
 s3income4  <- polr(E4 ~ group * income, data = s3income, Hess=TRUE)
 summary(s3income4)
 ctable <- coef(summary(s3income4))
@@ -295,22 +370,51 @@ exp(cbind(OR = coef(s3income4), ci))
 
 ```
 
-
-
-Interaction with EU fund attitudes and perceived competitiveness
 ```{r}
-s3$E1_coll <- car::recode(s3$E1,"'1'='2'")
-s3$E2_coll <- car::recode(s3$E2,"'1'='2'")
-
-s3$E1_coll <- as.ordered(s3$E1_coll)
-s3$E2_coll <- as.ordered(s3$E2_coll)
-
-s3_fit_all <- MANOVA.wide(cbind(E3, E4) ~ group * E1_coll * E2_coll, data = s3, iter = 1000, CPU = 1)
-
-summary(s3_fit_all)
-
-simCI(s3_fit_all, contrast = "pairwise", type = "Tukey", interaction = F, factor ="group")
+# # Fit ordered logistic regression models
+# s3personal  <- polr(E3 ~ group, data = s3, Hess=TRUE)
+# 
+# # Function to extract coefficients, standard errors, p-values, and odds ratios
+# extract_polr_results <- function(model, baseline) {
+#   ctable <- coef(summary(model))
+#   p_values <- pnorm(abs(ctable[, "t value"]), lower.tail = FALSE) * 2
+#   ci <- confint(model)
+#   
+#   # Compute odds ratios
+#   results <- data.frame(
+#     Estimate = round(ctable[, "Value"], 2),
+#     `StdError` = round(ctable[, "Std. Error"], 2),
+#     `p` = ifelse(p_values < 0.001, "<.001", round(p_values, 3)),
+#     OR = round(exp(ctable[, "Value"]), 2),
+#     `95CI` = paste0("[", round(exp(ci[, 1]), 2), ", ", round(exp(ci[, 2]), 2), "]")
+#   )
+#   
+#   results$Baseline <- baseline
+#   return(results)
+# }
+# 
+# # Extract results
+# personal_control <- extract_polr_results(s3personal, "Control")
+# personal_reciprocity <- extract_polr_results(s3personal, "Reciprocity")
+# 
+# # Combine results
+# table_data <- rbind(
+#   cbind(Dependent = "Personal agreement", personal_control),
+#   cbind(Dependent = "Personal agreement", personal_reciprocity)
+# )
+# colnames(table_data)
+# 
+# # Create table
+# table_data %>%
+#   select(Dependent, Baseline, Estimate, StdError, p, OR, X95CI) %>%
+#   kable(caption = "Support for building social housing",
+#         align = "lcccccc",
+#         col.names = c("", "Baseline", "Estimate", "Std. Error", "p", "OR", "[95% CI]")) %>%
+#   kable_styling(full_width = FALSE, position = "left") %>%
+#   add_header_above(c(" " = 2, " " = 5)) %>%
+#   pack_rows("Personal agreement", 1, 2, indent = TRUE) %>%
+#   pack_rows("Majority perspective", 3, 4, indent = TRUE) %>%
+#   footnote(general = "Ordered logit regression; OR=Odds Ratio; CI=95% Confidence Interval")
 
 ```
-
 
