@@ -5,8 +5,10 @@ date: "2025-03-05"
 ---
 
 ```{r setup, include=FALSE}
+
 knitr::opts_chunk$set(echo = TRUE)
 
+suppressMessages({
 library(rio)
 library(dplyr)
 library(PerformanceAnalytics)
@@ -31,12 +33,16 @@ library(rstatix)
 library(multcomp)
 library(jtools)
 library(sjPlot)
-library(MASS)
 
 #added
 library(ggdist)
-
-
+library(MASS)
+library(caret)
+library(pROC)
+library(nnet)
+library(marginaleffects)
+library(huxtable)
+})
 
 set.seed(42)
 
@@ -298,9 +304,8 @@ exp(cbind(OR = coef(s3majority), ci))
 
 ```{r}
 # Re-level to have Proportionality as baseline
-#Changes the baseline category from the default (likely "Control") to "Proportionality".
+#Changes the baseline category from the default ("Control") to "Proportionality".
 #This allows all comparisons to be made against "Proportionality" instead of another group.
-#what is proportionality
 
 s3$group <- relevel(s3$group, ref = "Proportionality")
 
@@ -370,51 +375,82 @@ exp(cbind(OR = coef(s3income4), ci))
 
 ```
 
-```{r}
-# # Fit ordered logistic regression models
-# s3personal  <- polr(E3 ~ group, data = s3, Hess=TRUE)
-# 
-# # Function to extract coefficients, standard errors, p-values, and odds ratios
-# extract_polr_results <- function(model, baseline) {
-#   ctable <- coef(summary(model))
-#   p_values <- pnorm(abs(ctable[, "t value"]), lower.tail = FALSE) * 2
-#   ci <- confint(model)
-#   
-#   # Compute odds ratios
-#   results <- data.frame(
-#     Estimate = round(ctable[, "Value"], 2),
-#     `StdError` = round(ctable[, "Std. Error"], 2),
-#     `p` = ifelse(p_values < 0.001, "<.001", round(p_values, 3)),
-#     OR = round(exp(ctable[, "Value"]), 2),
-#     `95CI` = paste0("[", round(exp(ci[, 1]), 2), ", ", round(exp(ci[, 2]), 2), "]")
-#   )
-#   
-#   results$Baseline <- baseline
-#   return(results)
-# }
-# 
-# # Extract results
-# personal_control <- extract_polr_results(s3personal, "Control")
-# personal_reciprocity <- extract_polr_results(s3personal, "Reciprocity")
-# 
-# # Combine results
-# table_data <- rbind(
-#   cbind(Dependent = "Personal agreement", personal_control),
-#   cbind(Dependent = "Personal agreement", personal_reciprocity)
-# )
-# colnames(table_data)
-# 
-# # Create table
-# table_data %>%
-#   select(Dependent, Baseline, Estimate, StdError, p, OR, X95CI) %>%
-#   kable(caption = "Support for building social housing",
-#         align = "lcccccc",
-#         col.names = c("", "Baseline", "Estimate", "Std. Error", "p", "OR", "[95% CI]")) %>%
-#   kable_styling(full_width = FALSE, position = "left") %>%
-#   add_header_above(c(" " = 2, " " = 5)) %>%
-#   pack_rows("Personal agreement", 1, 2, indent = TRUE) %>%
-#   pack_rows("Majority perspective", 3, 4, indent = TRUE) %>%
-#   footnote(general = "Ordered logit regression; OR=Odds Ratio; CI=95% Confidence Interval")
+## cross validation
 
+```{r}
+#out of sample fit:
+
+# Split data into training and testing 80/20
+set.seed(123)
+s3$group <- as.factor(s3$group)
+
+# Define training control for repeated cross-validation
+train_control <- trainControl(method = "cv", number = 10)
+
+s3$group <- relevel(s3$group, ref = "Control")
+
+# Train ordered logit model using caret with polr
+model1 <- train(E3 ~ group, 
+                data = s3, 
+                Hess=TRUE,
+                method = "polr",
+                #ref = "Control",
+                trControl = train_control)
+
+# Train ordered logit model using caret with polr
+model1_2 <- train(E3 ~ group, 
+                data = s3, 
+                Hess=TRUE,
+                method = "polr",
+                #ref = "Control",
+                trControl = train_control)
+
+s3$group <- relevel(s3$group, ref = "Proportionality")
+
+model2 <- train(E3 ~ group, 
+                data = s3, 
+                Hess=TRUE,
+                method = "polr",
+               # ref = "Proportionality",
+                trControl = train_control)
 ```
 
+```{r}
+summary(model1)
+summary(model1_2)
+summary(model2)
+
+#check resampling results
+summary(model1$resample)
+summary(model1_2$resample)
+```
+
+```{r}
+# Set seed for reproducibility
+set.seed(123)
+
+# Ensure 'group' is a factor
+s3$group <- factor(s3$group)
+
+# Define cross-validation control
+train_control <- trainControl(method = "cv", number = 10)
+
+# Function to train polr model with different reference groups
+train_polr_model <- function(ref_level) {
+  s3$group <- relevel(s3$group, ref = ref_level)
+  train(E3 ~ group, 
+        data = s3, 
+        Hess = TRUE, 
+        method = "polr", 
+        trControl = train_control)
+}
+
+# Train models with different reference groups
+model_control <- train_polr_model("Control")
+model_proportionality <- train_polr_model("Proportionality")
+
+# Print model summaries
+summary(model_control)
+summary(model_proportionality)
+
+```
