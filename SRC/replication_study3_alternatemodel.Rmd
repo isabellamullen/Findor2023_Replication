@@ -1,0 +1,222 @@
+---
+title: "replication_study3_alternatemodel"
+output: pdf_document
+date: "`r Sys.Date()`"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(rio)
+library(dplyr)
+library(PerformanceAnalytics)
+library(kableExtra)
+library(psych)
+library(ggplot2)
+library(jmv)
+library(magick)
+library(report)
+library(reshape2)
+library(ordinal)
+library(RVAideMemoire)
+library(emmeans)
+library(effectsize)
+library(repmod)
+library(MANOVA.RM)
+library(ggrepel)
+library(matrixTests)
+library(tidyverse)
+library(lessR)
+library(rstatix)
+library(multcomp)
+library(jtools)
+library(sjPlot)
+
+#added
+library(ggdist)
+
+
+
+set.seed(42)
+
+options(scipen=999, digits=3)
+
+#This function concatenates multiple vectors element-wise while handling NA values by replacing them with empty strings.
+#Works like paste(), but ensures that NA values are treated as missing (not "NA" as paste() would normally do).
+#Removes unnecessary spaces or separators from the output.
+#Converts empty results back to NA.
+
+paste_na <- function(..., sep = " ") {
+  L <- list(...)
+  L <- lapply(
+    L,
+    function(x) {
+      x[is.na(x)] <- ""
+      x
+    }
+  )
+  out <- gsub(
+    paste0("(^", sep, "|", sep, "$)"), "",
+    gsub(
+      paste0(sep, sep), sep,
+      do.call(paste, c(L, list(sep = sep)))
+    )
+  )
+  is.na(out) <- out == ""
+  return(out)
+}
+
+
+```
+# Study 3 {.tabset}
+## Data {.tabset}
+### Data load
+```{r}
+s3 <- import("../original_materials/data/Study3.sav")
+```
+
+### Data prep
+```{r, message=FALSE, results='hide'}
+s3$group= factor(s3$SKUPINA, levels = c(1, 2,3,4), labels = c("Control","Equality", "Proportionality", "Need"))
+s3$SEX <- factor(s3$SEX, levels = c(1, 2), labels = c("Male","Female"))
+s3$AGECAT= factor(s3$AGECAT, levels = c(1,2,3,4,5,6), labels = c("18-24","25-34","35-44", "45-54","55-64","65+"))
+s3$EDU= factor(s3$EDU, levels = c(1, 2,3,4), labels = c("Primary","Secondary (no diploma)","Secondary (complete)", "University"))
+s3$SIZE= factor(s3$SIZE, levels = c(1, 2,3,4,5), labels = c("less than 1k","1k-4 999","5k-19 999", "20k - 99 999","100k+"))
+s3$REG= factor(s3$REG, levels = c(1, 2,3,4,5,6,7,8), labels = c("Bratislavsky","Trnavsky","Trenciansky", "Nitriansky","Zilinsky","Banskobystricky","Presovsky","Kosicky"))
+
+
+s3$income <- car::recode(s3$PINCOME,"'1'='below median';'2'='below median';'8'='NA';'9'='NA'; else = 'above median'")
+```
+
+### Original Model
+
+```{r}
+s3$E1 <- as.ordered(s3$E1)
+s3$E2 <- as.ordered(s3$E2)
+s3$E3 <- as.ordered(s3$E3)
+s3$E4 <- as.ordered(s3$E4)
+
+s3personal  <- polr(E3 ~ group, data = s3, Hess=TRUE)
+summary(s3personal)
+ctable <- coef(summary(s3personal))
+p <- pnorm(abs(ctable[, "t value"]), lower.tail = FALSE) * 2
+(ctable <- cbind(ctable, "p value" = p))
+ci <- confint(s3personal)
+exp(cbind(OR = coef(s3personal), ci))
+```
+
+
+### Alternate Model
+
+```{r}
+s3personal_probit <- polr(E3 ~ group + AGE + SEX + EDU + REG, data = s3,
+                          Hess=TRUE, method = "probit")
+summary(s3personal)
+ctable <- coef(summary(s3personal))
+p <- pnorm(abs(ctable[, "t value"]), lower.tail = FALSE) * 2
+(ctable <- cbind(ctable, "p value" = p))
+ci <- confint(s3personal)
+exp(cbind(OR = coef(s3personal), ci))
+```
+
+#### (In-sample Performance) Confusion Matrix and Accuracy
+
+```{r}
+# Predicted classes
+pred_logit <- predict(s3personal, type = "class")
+pred_probit <- predict(s3personal_probit, type = "class")
+
+# Confusion matrices
+table(pred_logit, s3$E3)
+table(pred_probit, s3$E3)
+
+# Accuracy calculation
+mean(pred_logit == factor(s3$E3, ordered = FALSE))
+mean(pred_probit == factor(s3$E3, ordered = FALSE))
+```
+
+#### (In-sample Performance) ROC Curve
+
+```{r}
+library(pROC)
+
+# Generate ROC curves for each class level
+roc_logit <- roc(s3$E3, prob_logit[, 2])
+roc_probit <- roc(s3$E3, prob_probit[, 2])
+
+plot(roc_logit, col = "blue", main = "ROC Curve Comparison")
+plot(roc_probit, col = "red", add = TRUE)
+legend("topleft", legend = c("Logit", "Probit"), col = c("blue", "red"), lwd = 2)
+```
+
+#### (In-sample Performance) AIC and BIC
+
+```{r}
+# AIC comparison
+AIC(s3personal, s3personal_probit)
+
+# BIC comparison
+BIC(s3personal, s3personal_probit)
+```
+
+#### (In-sample Performance) Observed vs. Predicted Probability Plot
+
+```{r}
+library(ggplot2)
+
+# Predicted probabilities
+prob_logit <- predict(s3personal, type = "prob")
+prob_probit <- predict(s3personal_probit, type = "prob")
+
+# Combine data for plotting
+calibration_data <- data.frame(
+  Observed = as.numeric(s3$E3),
+  Predicted_Logit = prob_logit[, 2],
+  Predicted_Probit = prob_probit[, 2]
+)
+
+# Plot
+ggplot(calibration_data, aes(x = Observed)) +
+  geom_point(aes(y = Predicted_Logit, color = "Logit")) +
+  geom_point(aes(y = Predicted_Probit, color = "Probit")) +
+  geom_smooth(aes(y = Predicted_Logit, color = "Logit"), method = "loess", se = FALSE) +
+  geom_smooth(aes(y = Predicted_Probit, color = "Probit"), method = "loess", se = FALSE) +
+  labs(title = "Calibration Plot", x = "Observed Outcome", y = "Predicted Probability") +
+  scale_color_manual(values = c("Logit" = "blue", "Probit" = "red"))
+```
+
+#### (In-sample Performance) Log-likelihood Ratio Test
+
+```{r}
+library(lmtest)
+lrtest(s3personal, s3personal_probit)
+```
+
+#### (Out-of-sample Performance) K-fold Cross-Validation
+
+```{r}
+library(caret)
+
+# Cross-validation control
+ctrl <- trainControl(method = "cv", number = 10)
+
+# Fit models with cross-validation
+logit_cv <- train(E3 ~ group, data = s3, method = "polr", trControl = ctrl)
+probit_cv <- train(E3 ~ group + AGE + SEX + EDU + REG, data = s3, method = "polr", trControl = ctrl)
+
+# Model performance
+logit_cv$results
+probit_cv$results
+```
+
+#### (Out-of-Sample Performance) Mean Squared Error
+
+```{r}
+# MSE calculation
+mse_logit <- mean((prob_logit_test - model.matrix(~ E3 - 1, data = test_data))^2)
+mse_probit <- mean((prob_probit_test - model.matrix(~ E3 - 1, data = test_data))^2)
+
+mse_logit
+mse_probit
+```
+
