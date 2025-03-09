@@ -31,6 +31,9 @@ library(rstatix)
 library(multcomp)
 library(jtools)
 library(sjPlot)
+library(generalhoslem)
+library(effects)
+library(lmtest)
 
 #added
 library(ggdist)
@@ -88,6 +91,11 @@ s3$REG= factor(s3$REG, levels = c(1, 2,3,4,5,6,7,8), labels = c("Bratislavsky","
 s3$income <- car::recode(s3$PINCOME,"'1'='below median';'2'='below median';'8'='NA';'9'='NA'; else = 'above median'")
 ```
 
+```{r}
+# Checking the data types of the dataset
+str(s3)
+```
+
 ### Original Model
 
 ```{r}
@@ -109,14 +117,63 @@ exp(cbind(OR = coef(s3personal), ci))
 ### Alternate Model
 
 ```{r}
-s3personal_probit <- polr(E3 ~ group + AGE + SEX + EDU + REG, data = s3,
-                          Hess=TRUE, method = "probit")
-summary(s3personal)
-ctable <- coef(summary(s3personal))
+s3personal_probit <- polr(E3 ~ group + AGE + as.numeric(EDU) + as.numeric(SEX)
+                          + as.numeric(REG), data = s3,
+                          Hess=TRUE)
+summary(s3personal_probit)
+ctable <- coef(summary(s3personal_probit))
 p <- pnorm(abs(ctable[, "t value"]), lower.tail = FALSE) * 2
 (ctable <- cbind(ctable, "p value" = p))
-ci <- confint(s3personal)
-exp(cbind(OR = coef(s3personal), ci))
+ci <- confint(s3personal_probit)
+exp(cbind(OR = coef(s3personal_probit), ci))
+```
+
+### Original Model - Releved to Proportionality
+
+```{r}
+s3$group <- relevel(s3$group, ref = "Proportionality")
+s3personal_prop  <- polr(E3 ~ group, data = s3, Hess=TRUE)
+summary(s3personal_prop)
+ctable <- coef(summary(s3personal_prop))
+p <- pnorm(abs(ctable[, "t value"]), lower.tail = FALSE) * 2
+(ctable <- cbind(ctable, "p value" = p))
+ci <- confint(s3personal_prop)
+exp(cbind(OR = coef(s3personal_prop), ci))
+```
+
+### Alternate Model - Releved to Proportionality
+
+```{r}
+s3personal_probit_prop <- polr(E3 ~ as.numeric(group) + AGE + as.numeric(EDU)
+                               + as.numeric(SEX) + as.numeric(REG), data = s3,
+                          Hess=TRUE)
+summary(s3personal_probit_prop)
+ctable <- coef(summary(s3personal_probit_prop))
+p <- pnorm(abs(ctable[, "t value"]), lower.tail = FALSE) * 2
+(ctable <- cbind(ctable, "p value" = p))
+ci <- confint(s3personal_probit_prop)
+exp(cbind(OR = coef(s3personal_probit_prop), ci))
+```
+
+```{r}
+# This test is an indicator of whether we have used an appropriate model to
+# explain the data. The p-value > 0.05 confirms for us a good fit for our model.
+print(lipsitz.test(s3personal_probit))
+print(lipsitz.test(s3personal_probit_prop))
+```
+
+#### Confusion Tables
+
+```{r}
+# Original Model
+predict_orig <-  predict(s3personal, s3)
+cTab_orig <- table(s3$E3, predict_orig)
+print(cTab_orig)
+
+# Alternate Model
+predict_alter <-  predict(s3personal_probit, s3)
+cTab_alter <- table(s3$E3, predict_alter)
+cTab_alter
 ```
 
 #### (In-sample Performance) Confusion Matrix and Accuracy
@@ -188,7 +245,6 @@ ggplot(calibration_data, aes(x = Observed)) +
 #### (In-sample Performance) Log-likelihood Ratio Test
 
 ```{r}
-library(lmtest)
 lrtest(s3personal, s3personal_probit)
 ```
 
@@ -202,11 +258,18 @@ ctrl <- trainControl(method = "cv", number = 10)
 
 # Fit models with cross-validation
 logit_cv <- train(E3 ~ group, data = s3, method = "polr", trControl = ctrl)
-probit_cv <- train(E3 ~ group + AGE + SEX + EDU + REG, data = s3, method = "polr", trControl = ctrl)
+probit_cv <- train(E3 ~ group + AGE + SEX + EDU + REG, data = s3,
+                   method = "polr", trControl = ctrl)
 
 # Model performance
-logit_cv$results
-probit_cv$results
+print(logit_cv)
+print(probit_cv)
+```
+
+```{r}
+# # Compare resampling results
+# resamples <- resamples(list(general = logit_cv, restricted = probit_cv))
+# summary(resamples)
 ```
 
 #### (Out-of-Sample Performance) Mean Squared Error
@@ -218,5 +281,104 @@ mse_probit <- mean((prob_probit_test - model.matrix(~ E3 - 1, data = test_data))
 
 mse_logit
 mse_probit
+```
+
+#### (Independent Variable Effects)
+
+```{r, fig.width=6, fig.height=8}
+plot(Effect(focal.predictors = "AGE", s3personal_probit))
+```
+
+```{r}
+# This function gets the most often repeating factor value in a column
+mode_fctr <- function(x) levels(x)[which.max(tabulate(match(x, levels(x))))]
+
+# This function gets the most often repeating value in a column
+mode_char <- function(x) unique(x)[which.max(tabulate(match(x, unique(x))))]
+
+levels(s3$REG)
+```
+
+#### (Quantity of Interest)
+
+```{r, fig.width=8, fig.height=5}
+# We create a scenario where we look at the following for the Bratislavsky and
+# Zilinsky regions
+# Median AGE
+# Most often repeating (mode) EDU
+# Most often repeating (mode) SEX
+# REG = 1/5 (Bratislavsky/Zilinsky)
+
+X.low<-c(group = mode_char(as.numeric(filter(s3, REG == "Bratislavsky")$group)), 
+         AGE = median(filter(s3, REG == "Bratislavsky")$AGE),
+         EDU = mode_char(as.numeric(filter(s3, REG == "Bratislavsky")$EDU)),
+         SEX = mode_char(as.numeric(filter(s3, REG == "Bratislavsky")$SEX)),
+         REG = 1) #REG=Bratislavsky
+
+X.high<-c(group = mode_char(as.numeric(filter(s3, REG == "Zilinsky")$group)),
+        AGE = median(filter(s3, REG == "Zilinsky")$AGE),
+        EDU = mode_char(as.numeric(filter(s3, REG == "Zilinsky")$EDU)),
+        SEX = mode_char(as.numeric(filter(s3, REG == "Zilinsky")$SEX)),
+        REG = 5) #REG=Zilinsky
+
+draws<-mvrnorm(1000, #1000 draws;
+               c(coef(s3personal_probit_prop),
+                 s3personal_probit_prop$zeta), #note inclusion of cutpoints
+               solve(s3personal_probit_prop$Hessian))
+
+B<-draws[,1:length(coef(s3personal_probit_prop))]
+Taus<-draws[,(length(coef(s3personal_probit_prop))+1):ncol(draws)]
+
+# Predicted probabilities for coop = 1 and coop = 4
+pi.class1.sc1 <- plogis(Taus[, 1] - B %*% X.low) # Pr(Y = 1)
+pi.class1.sc2 <- plogis(Taus[, 1] - B %*% X.high)
+
+pi.class2.sc1 <- plogis(Taus[, 2] - B %*% X.low) -
+  plogis(Taus[, 1] - B %*% X.low) # Pr(Y = 2)
+pi.class2.sc2 <- plogis(Taus[, 2] - B %*% X.high) -
+  plogis(Taus[, 1] - B %*% X.high)
+
+pi.class3.sc1 <- plogis(Taus[, 3] - B %*% X.low) -
+  plogis(Taus[, 2] - B %*% X.low) # Pr(Y = 3)
+pi.class3.sc2 <- plogis(Taus[, 3] - B %*% X.high) -
+  plogis(Taus[, 2] - B %*% X.high)
+
+pi.class4.sc1 <- 1 - plogis(Taus[, 3] - B %*% X.low) # Pr(Y = 4)
+pi.class4.sc2 <- 1 - plogis(Taus[, 3] - B %*% X.high)
+
+# Computing difference in probabilities
+fd.class1 <- pi.class1.sc2 - pi.class1.sc1
+fd.class2 <- pi.class2.sc2 - pi.class2.sc1
+fd.class3 <- pi.class3.sc2 - pi.class3.sc1
+fd.class4 <- pi.class4.sc2 - pi.class4.sc1
+
+plot(density(fd.class1, adjust = 1.5),
+     xlim = c(-0.8, 0.8),
+     ylim = range(density(fd.class1)$y, density(fd.class2)$y, 
+                  density(fd.class3)$y, density(fd.class4)$y),
+     xlab = "Change in Predicted Probability",
+     col = "lightgreen", bty = "n",
+     yaxt = "n", lwd = 2,
+     main = "Implied effect on E3 (Personal Agreement of Construction of Apartment)",
+     ylab = "",
+     )
+
+lines(density(fd.class2, adjust = 1.5), col = "lightblue", lwd = 2, lty = 2)
+lines(density(fd.class3, adjust = 1.5), col = "lightpink", lwd = 2, lty = 3)
+lines(density(fd.class4, adjust = 1.5), col = "lightgoldenrod", lwd = 2,
+      lty = 4)
+
+legend(
+  "topleft",  # Adjust x and y to move the legend
+  legend = c(
+    "Pr(E3 = 1 | REG = Bratislavsky - REG = Zilinsky)",
+    "Pr(E3 = 2 | REG = Bratislavsky - REG = Zilinsky)",
+    "Pr(E3 = 3 | REG = Bratislavsky - REG = Zilinsky)",
+    "Pr(E3 = 4 | REG = Bratislavsky - REG = Zilinsky)"
+  ),
+  col = c("lightgreen", "lightblue", "lightpink", "lightgoldenrod"),
+  lwd = 2,
+  bty = "n", cex = 0.6
+)
 ```
 
