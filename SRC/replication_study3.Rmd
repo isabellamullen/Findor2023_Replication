@@ -94,6 +94,22 @@ s3$REG= factor(s3$REG, levels = c(1, 2,3,4,5,6,7,8), labels = c("Bratislavsky","
 
 s3$income <- car::recode(s3$PINCOME,"'1'='below median';'2'='below median';'8'='NA';'9'='NA'; else = 'above median'")
 ```
+### Visualization of dependent variable
+```{r}
+counts <- table(s3$E3)
+par(mar = c(5, 4, 4, 8))
+
+barplot(counts, col = c("lightblue", "lightgreen", "pink", "lavender"), 
+        main = "Distribution of Support for the Social Housing Project",
+        xlab = "Support", ylab = "Frequency",
+        border = "black")
+
+legend_labels <- c("1: completely disagree", "2", "3", "4: completely agree")
+
+legend("topright", legend = legend_labels, fill = c("lightblue", "lightgreen", "pink", "lavender"), xpd = TRUE, inset = c(-0.2, 0), 
+       title = "Categories")
+
+```
 
 ## Descriptives {.tabset}
 ### Main outcomes {.tabset}
@@ -417,12 +433,16 @@ model2 <- train(E3 ~ group,
 
 ```{r}
 summary(model1)
-summary(model1_2)
 summary(model2)
 
 #check resampling results
 summary(model1$resample)
-summary(model1_2$resample)
+summary(model2$resample)
+```
+
+```{r}
+# likelihood ratio test
+
 ```
 
 ```{r}
@@ -453,4 +473,8 @@ model_proportionality <- train_polr_model("Proportionality")
 summary(model_control)
 summary(model_proportionality)
 
+```
+
+```{r}
+plot(s3$E3)
 ```
