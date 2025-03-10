@@ -118,7 +118,7 @@ exp(cbind(OR = coef(s3personal), ci))
 
 ```{r}
 s3personal_probit <- polr(E3 ~ group + AGE + EDU + SEX + REG, data = s3,
-                          Hess=TRUE)
+                          Hess=TRUE, method = "probit")
 summary(s3personal_probit)
 ctable <- coef(summary(s3personal_probit))
 p <- pnorm(abs(ctable[, "t value"]), lower.tail = FALSE) * 2
@@ -143,8 +143,9 @@ exp(cbind(OR = coef(s3personal_prop), ci))
 ### Alternate Model - Releved to Proportionality
 
 ```{r}
+s3$group <- relevel(s3$group, ref = "Proportionality")
 s3personal_probit_prop <- polr(E3 ~ group + AGE + EDU + SEX + REG, data = s3,
-                          Hess=TRUE)
+                          Hess=TRUE, method = "probit")
 summary(s3personal_probit_prop)
 ctable <- coef(summary(s3personal_probit_prop))
 p <- pnorm(abs(ctable[, "t value"]), lower.tail = FALSE) * 2
@@ -278,18 +279,14 @@ print(probit_cv)
 
 ```{r}
 # MSE calculation
-mse_logit <- mean((prob_logit_test - model.matrix(~ E3 - 1, data = test_data))^2)
-mse_probit <- mean((prob_probit_test - model.matrix(~ E3 - 1, data = test_data))^2)
-
-mse_logit
-mse_probit
+# mse_logit <- mean((prob_logit_test - model.matrix(~ E3 - 1, data = test_data))^2)
+# mse_probit <- mean((prob_probit_test - model.matrix(~ E3 - 1, data = test_data))^2)
+# 
+# mse_logit
+# mse_probit
 ```
 
 #### (Independent Variable Effects)
-
-```{r, fig.width=6, fig.height=8}
-plot(Effect(focal.predictors = "AGE", s3personal_probit))
-```
 
 ```{r}
 # This function gets the most often repeating factor value in a column
@@ -298,17 +295,44 @@ mode_fctr <- function(x) levels(x)[which.max(tabulate(match(x, levels(x))))]
 # This function gets the most often repeating value in a column
 mode_char <- function(x) unique(x)[which.max(tabulate(match(x, unique(x))))]
 
-levels(s3$REG)
+Mode <- function(x) {
+  ux <- unique(x)
+  ux[which.max(tabulate(match(x, ux)))]
+}
+
+s3$group <- relevel(s3$group, ref = "Control")
+s3personal_probit_prop <- polr(E3 ~ as.numeric(group) + AGE + as.numeric(EDU) +
+                                 as.numeric(SEX) + as.numeric(REG), data = s3,
+                               Hess=TRUE, method = "probit")
+```
+
+
+```{r}
+new_data <- data.frame(
+  AGE = seq(min(s3$AGE), max(s3$AGE), length.out = 100),
+  group = factor("Proportionality", levels = levels(s3$group)),   # Choose a valid level
+  EDU = factor("Secondary (complete)", levels = levels(s3$EDU)),       # Choose a valid level
+  SEX = factor("Female", levels = levels(s3$SEX)),          # Choose a valid level
+  REG = factor("Bratislavsky", levels = levels(s3$REG))          # Choose a valid level
+)
+
+pred_probs <- predict(s3personal_probit, newdata = new_data, type = "probs")
+
+pred_df <- as.data.frame(pred_probs)
+pred_df$AGE <- new_data$AGE
+pred_df <- tidyr::pivot_longer(pred_df, cols = -AGE, names_to = "Category",
+                               values_to = "Probability")
+
+ggplot(pred_df, aes(x = AGE, y = Probability, color = Category)) +
+  geom_line(size = 1) +
+  labs(title = "Effect of AGE on Predicted Probabilities",
+       x = "AGE", y = "Probability") +
+  theme_minimal()
 ```
 
 #### (Quantity of Interest)
 
 ```{r, fig.width=8, fig.height=5}
-
-s3personal_probit_prop <- polr(E3 ~ as.numeric(group) + AGE + as.numeric(EDU) +
-                                 as.numeric(SEX) + as.numeric(REG), data = s3,
-                          Hess=TRUE)
-
 # We create a scenario where we look at the following for the Bratislavsky and
 # Zilinsky regions
 # Median AGE
