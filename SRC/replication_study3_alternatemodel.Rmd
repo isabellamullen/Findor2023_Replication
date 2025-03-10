@@ -113,52 +113,25 @@ ci <- confint(s3personal)
 exp(cbind(OR = coef(s3personal), ci))
 ```
 
-
 ### Alternate Model
 
 ```{r}
-s3personal_probit <- polr(E3 ~ group + AGE + EDU + SEX + REG, data = s3,
-                          Hess=TRUE, method = "probit")
-summary(s3personal_probit)
-ctable <- coef(summary(s3personal_probit))
+# We present an alternate model with a changed linear predictor
+s3personal_alter <- polr(E3 ~ group + AGE + EDU + SEX + REG, data = s3,
+                          Hess=TRUE)
+summary(s3personal_alter)
+ctable <- coef(summary(s3personal_alter))
 p <- pnorm(abs(ctable[, "t value"]), lower.tail = FALSE) * 2
 (ctable <- cbind(ctable, "p value" = p))
-ci <- confint(s3personal_probit)
-exp(cbind(OR = coef(s3personal_probit), ci))
-```
-
-### Original Model - Releved to Proportionality
-
-```{r}
-s3$group <- relevel(s3$group, ref = "Proportionality")
-s3personal_prop  <- polr(E3 ~ group, data = s3, Hess=TRUE)
-summary(s3personal_prop)
-ctable <- coef(summary(s3personal_prop))
-p <- pnorm(abs(ctable[, "t value"]), lower.tail = FALSE) * 2
-(ctable <- cbind(ctable, "p value" = p))
-ci <- confint(s3personal_prop)
-exp(cbind(OR = coef(s3personal_prop), ci))
-```
-
-### Alternate Model - Releved to Proportionality
-
-```{r}
-s3$group <- relevel(s3$group, ref = "Proportionality")
-s3personal_probit_prop <- polr(E3 ~ group + AGE + EDU + SEX + REG, data = s3,
-                          Hess=TRUE, method = "probit")
-summary(s3personal_probit_prop)
-ctable <- coef(summary(s3personal_probit_prop))
-p <- pnorm(abs(ctable[, "t value"]), lower.tail = FALSE) * 2
-(ctable <- cbind(ctable, "p value" = p))
-ci <- confint(s3personal_probit_prop)
-exp(cbind(OR = coef(s3personal_probit_prop), ci))
+ci <- confint(s3personal_alter)
+exp(cbind(OR = coef(s3personal_alter), ci))
 ```
 
 ```{r}
 # This test is an indicator of whether we have used an appropriate model to
 # explain the data. The p-value > 0.05 confirms for us a good fit for our model.
 print(lipsitz.test(s3personal))
-print(lipsitz.test(s3personal_probit))
+print(lipsitz.test(s3personal_alter))
 ```
 
 #### Confusion Tables
@@ -170,7 +143,7 @@ cTab_orig <- table(s3$E3, predict_orig)
 print(cTab_orig)
 
 # Alternate Model
-predict_alter <-  predict(s3personal_probit, s3)
+predict_alter <-  predict(s3personal_alter, s3)
 cTab_alter <- table(s3$E3, predict_alter)
 cTab_alter
 ```
@@ -180,15 +153,15 @@ cTab_alter
 ```{r}
 # Predicted classes
 pred_logit <- predict(s3personal, type = "class")
-pred_probit <- predict(s3personal_probit, type = "class")
+pred_alter <- predict(s3personal_alter, type = "class")
 
 # Confusion matrices
 table(pred_logit, s3$E3)
-table(pred_probit, s3$E3)
+table(pred_alter, s3$E3)
 
 # Accuracy calculation
 mean(pred_logit == factor(s3$E3, ordered = FALSE))
-mean(pred_probit == factor(s3$E3, ordered = FALSE))
+mean(pred_alter == factor(s3$E3, ordered = FALSE))
 ```
 
 #### (In-sample Performance) ROC Curve
@@ -198,14 +171,14 @@ library(pROC)
 
 # Probabilities for each class
 prob_logit <- predict(s3personal, type = "prob")
-prob_probit <- predict(s3personal_probit, type = "prob")
+prob_alter <- predict(s3personal_alter, type = "prob")
 
 # Creating ROC curves for multiple classes
 roc_logit <- roc(s3$E3, prob_logit[, 2])
-roc_probit <- roc(s3$E3, prob_probit[, 2])
+roc_alter <- roc(s3$E3, prob_alter[, 2])
 
 plot(roc_logit, col = "blue", main = "ROC Curve Comparison")
-plot(roc_probit, col = "red", add = TRUE)
+plot(roc_alter, col = "red", add = TRUE)
 legend("bottomright", legend = c("Logit", "Probit"), col = c("blue", "red"), lwd = 2)
 ```
 
@@ -213,10 +186,10 @@ legend("bottomright", legend = c("Logit", "Probit"), col = c("blue", "red"), lwd
 
 ```{r}
 # AIC comparison
-AIC(s3personal, s3personal_probit)
+AIC(s3personal, s3personal_alter)
 
 # BIC comparison
-BIC(s3personal, s3personal_probit)
+BIC(s3personal, s3personal_alter)
 ```
 
 #### (In-sample Performance) Observed vs. Predicted Probability Plot
@@ -226,29 +199,29 @@ library(ggplot2)
 
 # Predicted probabilities
 prob_logit <- predict(s3personal, type = "prob")
-prob_probit <- predict(s3personal_probit, type = "prob")
+prob_alter <- predict(s3personal_alter, type = "prob")
 
 # Combine data for plotting
 calibration_data <- data.frame(
   Observed = as.numeric(s3$E3),
   Predicted_Logit = prob_logit[, 2],
-  Predicted_Probit = prob_probit[, 2]
+  Predicted_Alter = prob_alter[, 2]
 )
 
 # Plot
 ggplot(calibration_data, aes(x = Observed)) +
   geom_point(aes(y = Predicted_Logit, color = "Logit")) +
-  geom_point(aes(y = Predicted_Probit, color = "Probit")) +
+  geom_point(aes(y = Predicted_Alter, color = "Alter")) +
   geom_smooth(aes(y = Predicted_Logit, color = "Logit"), method = "loess", se = FALSE) +
-  geom_smooth(aes(y = Predicted_Probit, color = "Probit"), method = "loess", se = FALSE) +
+  geom_smooth(aes(y = Predicted_Alter, color = "Alter"), method = "loess", se = FALSE) +
   labs(title = "Calibration Plot", x = "Observed Outcome", y = "Predicted Probability") +
-  scale_color_manual(values = c("Logit" = "blue", "Probit" = "red"))
+  scale_color_manual(values = c("Logit" = "blue", "Alter" = "red"))
 ```
 
 #### (In-sample Performance) Log-likelihood Ratio Test
 
 ```{r}
-lrtest(s3personal, s3personal_probit)
+lrtest(s3personal, s3personal_alter)
 ```
 
 #### (Out-of-sample Performance) K-fold Cross-Validation
@@ -261,30 +234,23 @@ ctrl <- trainControl(method = "cv", number = 10)
 
 # Fit models with cross-validation
 logit_cv <- train(E3 ~ group, data = s3, method = "polr", trControl = ctrl)
-probit_cv <- train(E3 ~ group + AGE + SEX + EDU + REG, data = s3,
+alter_cv <- train(E3 ~ group + AGE + SEX + EDU + REG, data = s3,
                    method = "polr", trControl = ctrl)
 
 # Model performance
 print(logit_cv)
-print(probit_cv)
+print(alter_cv)
 ```
 
 ```{r}
-# # Compare resampling results
-# resamples <- resamples(list(general = logit_cv, restricted = probit_cv))
-# summary(resamples)
+# Compare resampling results
+resamples <- resamples(list(general = alter_cv, restricted = logit_cv))
+summary(resamples)
 ```
-
-#### (Out-of-Sample Performance) Mean Squared Error
-
 ```{r}
-# MSE calculation
-# mse_logit <- mean((prob_logit_test - model.matrix(~ E3 - 1, data = test_data))^2)
-# mse_probit <- mean((prob_probit_test - model.matrix(~ E3 - 1, data = test_data))^2)
-# 
-# mse_logit
-# mse_probit
+bwplot(resamples)
 ```
+
 
 #### (Independent Variable Effects)
 
@@ -299,40 +265,20 @@ Mode <- function(x) {
   ux <- unique(x)
   ux[which.max(tabulate(match(x, ux)))]
 }
-
-s3$group <- relevel(s3$group, ref = "Control")
-s3personal_probit_prop <- polr(E3 ~ as.numeric(group) + AGE + as.numeric(EDU) +
-                                 as.numeric(SEX) + as.numeric(REG), data = s3,
-                               Hess=TRUE, method = "probit")
 ```
 
 
-```{r}
-new_data <- data.frame(
-  AGE = seq(min(s3$AGE), max(s3$AGE), length.out = 100),
-  group = factor("Proportionality", levels = levels(s3$group)),   # Choose a valid level
-  EDU = factor("Secondary (complete)", levels = levels(s3$EDU)),       # Choose a valid level
-  SEX = factor("Female", levels = levels(s3$SEX)),          # Choose a valid level
-  REG = factor("Bratislavsky", levels = levels(s3$REG))          # Choose a valid level
-)
-
-pred_probs <- predict(s3personal_probit, newdata = new_data, type = "probs")
-
-pred_df <- as.data.frame(pred_probs)
-pred_df$AGE <- new_data$AGE
-pred_df <- tidyr::pivot_longer(pred_df, cols = -AGE, names_to = "Category",
-                               values_to = "Probability")
-
-ggplot(pred_df, aes(x = AGE, y = Probability, color = Category)) +
-  geom_line(size = 1) +
-  labs(title = "Effect of AGE on Predicted Probabilities",
-       x = "AGE", y = "Probability") +
-  theme_minimal()
+```{r, fig.width=8, fig.height=6}
+plot(Effect(focal.predictors = "AGE", s3personal_alter))
 ```
 
 #### (Quantity of Interest)
 
 ```{r, fig.width=8, fig.height=5}
+
+s3personal_alter <- polr(E3 ~ as.numeric(group) + AGE + as.numeric(EDU) +
+                                 as.numeric(SEX) + as.numeric(REG), data = s3,
+                               Hess=TRUE, method = "probit")
 # We create a scenario where we look at the following for the Bratislavsky and
 # Zilinsky regions
 # Median AGE
@@ -353,12 +299,12 @@ X.high<-c(group = mode_char(as.numeric(filter(s3, REG == "Zilinsky")$group)),
         REG = 5) #REG=Zilinsky
 
 draws<-mvrnorm(1000, #1000 draws;
-               c(coef(s3personal_probit_prop),
-                 s3personal_probit_prop$zeta), #note inclusion of cutpoints
-               solve(s3personal_probit_prop$Hessian))
+               c(coef(s3personal_alter),
+                 s3personal_alter$zeta), #note inclusion of cutpoints
+               solve(s3personal_alter$Hessian))
 
-B<-draws[,1:length(coef(s3personal_probit_prop))]
-Taus<-draws[,(length(coef(s3personal_probit_prop))+1):ncol(draws)]
+B<-draws[,1:length(coef(s3personal_alter))]
+Taus<-draws[,(length(coef(s3personal_alter))+1):ncol(draws)]
 
 # Predicted probabilities for coop = 1 and coop = 4
 pi.class1.sc1 <- plogis(Taus[, 1] - B %*% X.low) # Pr(Y = 1)
