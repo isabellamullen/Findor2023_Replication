@@ -11,37 +11,16 @@ knitr::opts_chunk$set(echo = TRUE)
 suppressMessages({
 library(rio)
 library(dplyr)
-library(PerformanceAnalytics)
+library(moments)
 library(kableExtra)
-library(psych)
 library(ggplot2)
-library(jmv)
-library(magick)
-library(report)
-library(reshape2)
-library(ordinal)
-library(RVAideMemoire)
-library(emmeans)
-library(effectsize)
-library(repmod)
-library(MANOVA.RM)
-library(ggrepel)
-library(matrixTests)
 library(tidyverse)
-library(lessR)
-library(rstatix)
-library(multcomp)
-library(jtools)
-library(sjPlot)
-
-#added
 library(ggdist)
 library(MASS)
 library(caret)
 library(pROC)
 library(nnet)
 library(marginaleffects)
-library(huxtable)
 })
 
 set.seed(42)
@@ -124,13 +103,10 @@ ggplot(s3, aes(x = E3, fill = group)) +
        x = "Support for Housing Project",
        y = "Count",
        fill = "Group") +
-  scale_fill_manual(values = c("#FAA916", "#9AB87A", "grey", "#FE5F55")) +
+  scale_fill_manual(values = c("#808080", "#9AB87A", "grey", "#FAA916")) +
   theme_minimal()
 
 #dev.off()
-```
-```{r}
-summary(s3$E3)
 ```
 
 ## Descriptives {.tabset}
@@ -142,108 +118,6 @@ s3 %>% dplyr::group_by(group) %>% dplyr::summarise(N = length(E3), Min=min(E3,na
 # Display summary statistics in a table (table A19 from paper)
 knitr::kable(s3_personal, caption = "Study 3 - personal agreement")%>%
   kable_styling(full_width = F)
-```
-
-```{r}
-#group (Control, Equality, Proportionality, Need) and summary statistics for E4 (Majority agreement with the statement | Construction of an apartment building)
-#what is the difference between E3(personal agreement) and E4 (majority agreement)
-s3 %>% dplyr::group_by(group) %>% dplyr::summarise(N = length(E4), Min=min(E4,na.rm= TRUE),Q1 = quantile(E4,probs = .25,na.rm = TRUE),Median = median(E4, na.rm = TRUE),Q3 = quantile(E4,probs = .75,na.rm = TRUE),Max = max(E4,na.rm = TRUE),Mean = mean(E4, na.rm = TRUE),SD = sd(E4, na.rm = TRUE), Skew = skewness(E4, na.rm = TRUE), Kurtosis = kurtosis(E4, na.rm = TRUE)) -> s3_majority
-
-#table (A20 from paper)
-knitr::kable(s3_majority, caption = "Study 3 - agreement of majority")%>%
-  kable_styling(full_width = F)
-```
-
-### Sample characteristics
-```{r}
-#script summarizes demographic variables
-
-#Gender Distribution
-s3_gender <- s3 %>% group_by(SEX) %>% 
-dplyr::summarise(n = n()) %>%
-  mutate(freq = n / sum(n))
-s3_gender$freq <- round(s3_gender$freq, 3)
-
-s3_gender%>%
-kable(caption = "Gender")%>%
-  kable_styling(full_width = F)
-```
-
-```{r}
-#Age Summary Statistics
-s3_age <- s3 %>% dplyr::summarise(Min=min(AGE,na.rm= TRUE),Q1 = quantile(AGE,probs = .25,na.rm = TRUE),Median = median(AGE, na.rm = TRUE),Q3 = quantile(AGE,probs = .75,na.rm = TRUE),Max = max(AGE,na.rm = TRUE),Mean = round(mean(AGE, na.rm = TRUE),3),SD = round(sd(AGE, na.rm = TRUE),2),n = n(),Missing = sum(is.na(AGE))) 
-
-s3_age %>%
-  kable(caption = "Age") %>%
-  kable_styling(full_width = F)
-```
-
-```{r}
-#Age Categories Distribution
-s3_agecat  <- s3 %>% group_by(AGECAT) %>% 
-dplyr::summarise(n = n()) %>%
-  mutate(freq = n / sum(n))
-s3_agecat$freq <- round(s3_agecat$freq, 3)
-
-s3_agecat%>%
-kable(caption = "Age categories")%>%
-  kable_styling(full_width = F)
-```
-
-```{r}
-#Education Level Distribution
-s3_educat <- s3 %>% group_by(EDU) %>% 
-dplyr::summarise(n = n()) %>%
-  mutate(freq = n / sum(n))
-s3_educat$freq <- round(s3_educat$freq, 3)
-
-s3_educat%>%
-kable(caption = "Education categories")%>%
-  kable_styling(full_width = F)
-```
-
-```{r}
-#Region Distribution
-s3_reg <- s3 %>% group_by(REG) %>% 
-dplyr::summarise(n = n()) %>%
-  mutate(freq = n / sum(n))
-s3_reg$freq <- round(s3_reg$freq, 3)
-
-s3_reg%>%
-kable(caption = "Region")%>%
-  kable_styling(full_width = F)
-```
-
-```{r}
-# Municipality Size Distribution
-s3_municip <- s3 %>% group_by(SIZE) %>% 
-dplyr::summarise(n = n()) %>%
-  mutate(freq = n / sum(n))
-s3_municip$freq <- round(s3_municip$freq, 3)
-
-s3_municip%>%
-kable(caption = "Municipality size")%>%
-  kable_styling(full_width = F)
-```
-
-### Randomization checks
-```{r}
-
-# Extracts relevant demographic variables (SEX, PINCOME, group) and converts them to numeric.
-# Performs Welch’s ANOVA to test if these variables significantly differ across groups.
-# Formats and displays the ANOVA results in a clean table.
-# Creates a contingency table to check for gender distribution across groups.
-
-s3_check <- dplyr::select(s3, SEX:PINCOME, -AGECAT, group)
-s3_check <- mutate_all(s3_check, function(x) as.numeric(x))
-
-s3_check <- col_oneway_welch(s3_check[,1:5], s3_check$group)
-
-s3_check %>%
-  kable(caption = "Randomization checks overall") %>%
-  kable_styling(full_width = F)
-
-table(s3$SEX, s3$group)
 ```
 
 ```{r}
@@ -266,38 +140,7 @@ axis.line.x = element_line(colour = 'black', size=0.5, linetype='solid'),
 axis.line.y = element_line(colour = 'black', size=0.5, linetype='solid'))
 ```
 
-## Plots {.tabset}
-### Main outcomes
-```{r}
-descriptives = psych::describeBy(x = s3$E3, group = s3$group)
-group = c("Control","Equality", "Proportionality", "Need")
-means = c(descriptives$'Control'$mean, descriptives$'Equality'$mean,descriptives$'Proportionality'$mean, descriptives$'Need'$mean)
-se = c(descriptives$'Control'$se, descriptives$'Equality'$se,descriptives$'Proportionality'$se, descriptives$'Need'$se)
-plotdat=data.frame(group, means, se)
-
-(s3_personal <- ggplot(data = s3, aes(y = E3, x = group, fill = group)) + geom_flat_violin(data = s3, position = position_nudge(x = .2, y = 0), alpha = .5) + geom_point(data = s3, aes(y = E3, color = group), position = position_jitter(width = .15,height = .15), size = .5, alpha = 0.5) + geom_point(data = plotdat, aes(x = group, y = means), position = position_nudge(x = 0.35), size = 1,inherit.aes = FALSE ) + geom_errorbar(inherit.aes=FALSE, data = plotdat, aes(x = group, ymax= means+(1.96*se), ymin=means+(-1.96*se), y=means), position = position_nudge(x = 0.35), width = 0.3) + expand_limits(x = 5) + guides(fill = FALSE) + guides(color = FALSE) + scale_color_grey() + scale_fill_grey() +
-    #scale_color_brewer(palette = "Accent") +
-    #scale_fill_brewer(palette = "Accent") +
-    theme_bw() + raincloud_theme + labs(y = "Personal agreement with building social housing \n(1 = completely disagree)") + scale_x_discrete(expand = c(0.15,0.2),labels=c("Control","Equality", 'Proportionality'="Reciprocity", "Need")))
-
-#ggsave("plot.png", width = 6, height = 4)
-
-descriptives = psych::describeBy(x = s3$E4, group = s3$group)
-group = c("Control","Equality", "Proportionality", "Need")
-means = c(descriptives$'Control'$mean, descriptives$'Equality'$mean,descriptives$'Proportionality'$mean, descriptives$'Need'$mean)
-se = c(descriptives$'Control'$se, descriptives$'Equality'$se,descriptives$'Proportionality'$se, descriptives$'Need'$se)
-plotdat=data.frame(group, means, se)
-
-(s3_majority <- ggplot(data = s3, aes(y = E4, x = group, fill = group)) + geom_flat_violin(data = s3, position = position_nudge(x = .2, y = 0), alpha = .5) + geom_point(data = s3, aes(y = E4, color = group), position = position_jitter(width = .15,height = .15), size = .5, alpha = 0.5) + geom_point(data = plotdat, aes(x = group, y = means), position = position_nudge(x = 0.35), size = 1,inherit.aes = FALSE ) + geom_errorbar(inherit.aes=FALSE, data = plotdat, aes(x = group, ymax= means+(1.96*se), ymin=means+(-1.96*se), y=means), position = position_nudge(x = 0.35), width = 0.3) + expand_limits(x = 5) + guides(fill = FALSE) + guides(color = FALSE) + scale_color_grey() + scale_fill_grey() +
-    #scale_color_brewer(palette = "Accent") +
-    #scale_fill_brewer(palette = "Accent") +
-    theme_bw() + raincloud_theme + labs(y = " Majority agreement with building social housing \n(1 = completely disagree)") + scale_x_discrete(expand = c(0.15,0.2),labels=c("Control","Equality", 'Proportionality'="Reciprocity", "Need")))
-
-#ggsave("plot.png", width = 6, height = 4)
-```
-
 ## Main analysis - separate ordinal regression {.tabset}
-
 ```{r}
 #ordered logistic regression
 
@@ -325,22 +168,6 @@ exp(cbind(OR = coef(s3personal), ci))
 ```
 
 ```{r}
-#Fit Ordered Logistic Regression for E4
-#same ordered logistic regression for E4 (majority agreement).
-s3majority  <- polr(E4 ~ group, data = s3, Hess=TRUE)
-summary(s3majority)
-
-#Extract Coefficients and Compute p-values
-ctable <- coef(summary(s3majority))
-p <- pnorm(abs(ctable[, "t value"]), lower.tail = FALSE) * 2
-(ctable <- cbind(ctable, "p value" = p))
-
-# Compute Confidence Intervals and Odds Ratios
-ci <- confint(s3majority)
-exp(cbind(OR = coef(s3majority), ci))
-```
-
-```{r}
 # Re-level to have Proportionality as baseline
 #Changes the baseline category from the default ("Control") to "Proportionality".
 #This allows all comparisons to be made against "Proportionality" instead of another group.
@@ -359,140 +186,6 @@ exp(cbind(OR = coef(s3personal), ci))
 
 ```
 
-```{r}
-#repeat for E4 (majority agreement)
-s3majority  <- polr(E4 ~ group, data = s3, Hess=TRUE)
-summary(s3majority)
-ctable <- coef(summary(s3majority))
-p <- pnorm(abs(ctable[, "t value"]), lower.tail = FALSE) * 2
-(ctable <- cbind(ctable, "p value" = p))
-ci <- confint(s3majority)
-exp(cbind(OR = coef(s3majority), ci))
-
-```
 
 
-## Main analysis - ordinal regression, interactions with income {.tabset}
 
-```{r}
-# Remove NA Values in income
-s3income <- dplyr::filter(s3, income != 'NA')
-
-#Set "Control" as the Reference Group
-s3income$group <- relevel(s3income$group, ref = "Control")
-
-#Fit Ordered Logistic Regression for E3 (Personal Agreement)
-#group * income indicates an interaction effect between group and income.
-s3income3  <- polr(E3 ~ group * income, data = s3income, Hess=TRUE)
-summary(s3income3)
-
-
-ctable <- coef(summary(s3income3))
-p <- pnorm(abs(ctable[, "t value"]), lower.tail = FALSE) * 2
-(ctable <- cbind(ctable, "p value" = p))
-ci <- confint(s3income3)
-exp(cbind(OR = coef(s3income3), ci))
-
-```
-
-```{r}
-# Remove NA Values in income
-s3income <- dplyr::filter(s3, income != 'NA')
-
-#Set "Control" as the Reference Group
-s3income$group <- relevel(s3income$group, ref = "Control")
-
-#Repeat for E4 (Majority Agreement)
-s3income4  <- polr(E4 ~ group * income, data = s3income, Hess=TRUE)
-summary(s3income4)
-ctable <- coef(summary(s3income4))
-p <- pnorm(abs(ctable[, "t value"]), lower.tail = FALSE) * 2
-(ctable <- cbind(ctable, "p value" = p))
-ci <- confint(s3income4)
-exp(cbind(OR = coef(s3income4), ci))
-
-```
-
-## cross validation
-
-```{r}
-#out of sample fit:
-
-# Split data into training and testing 80/20
-set.seed(123)
-s3$group <- as.factor(s3$group)
-
-# Define training control for repeated cross-validation
-train_control <- trainControl(method = "cv", number = 10)
-
-s3$group <- relevel(s3$group, ref = "Control")
-
-# Train ordered logit model using caret with polr
-model1 <- train(E3 ~ group, 
-                data = s3, 
-                Hess=TRUE,
-                method = "polr",
-                #ref = "Control",
-                trControl = train_control)
-
-# Train ordered logit model using caret with polr
-model1_2 <- train(E3 ~ group, 
-                data = s3, 
-                Hess=TRUE,
-                method = "polr",
-                #ref = "Control",
-                trControl = train_control)
-
-s3$group <- relevel(s3$group, ref = "Proportionality")
-
-model2 <- train(E3 ~ group, 
-                data = s3, 
-                Hess=TRUE,
-                method = "polr",
-               # ref = "Proportionality",
-                trControl = train_control)
-```
-
-```{r}
-summary(model1)
-summary(model2)
-
-#check resampling results
-summary(model1$resample)
-summary(model2$resample)
-```
-
-```{r}
-# likelihood ratio test
-
-```
-
-```{r}
-# Set seed for reproducibility
-set.seed(123)
-
-# Ensure 'group' is a factor
-s3$group <- factor(s3$group)
-
-# Define cross-validation control
-train_control <- trainControl(method = "cv", number = 10)
-
-# Function to train polr model with different reference groups
-train_polr_model <- function(ref_level) {
-  s3$group <- relevel(s3$group, ref = ref_level)
-  train(E3 ~ group, 
-        data = s3, 
-        Hess = TRUE, 
-        method = "polr", 
-        trControl = train_control)
-}
-
-# Train models with different reference groups
-model_control <- train_polr_model("Control")
-model_proportionality <- train_polr_model("Proportionality")
-
-# Print model summaries
-summary(model_control)
-summary(model_proportionality)
-
-```
