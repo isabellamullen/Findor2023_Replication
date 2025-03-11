@@ -96,8 +96,11 @@ s3$income <- car::recode(s3$PINCOME,"'1'='below median';'2'='below median';'8'='
 ```
 ### Visualization of dependent variable
 ```{r}
+
+#jpeg("/Users/bellamullen/Documents/GITHUB/Findor2023_Replication/SRC/plots/dv_dist.jpeg", width = 1200, height = 600, res = 100)
+
 counts <- table(s3$E3)
-par(mar = c(5, 4, 4, 8))
+par(mar = c(5, 4, 3, 10))
 
 barplot(counts, col = c("lightblue", "lightgreen", "pink", "lavender"), 
         main = "Distribution of Support for the Social Housing Project",
@@ -106,9 +109,25 @@ barplot(counts, col = c("lightblue", "lightgreen", "pink", "lavender"),
 
 legend_labels <- c("1: completely disagree", "2", "3", "4: completely agree")
 
-legend("topright", legend = legend_labels, fill = c("lightblue", "lightgreen", "pink", "lavender"), xpd = TRUE, inset = c(-0.2, 0), 
-       title = "Categories")
+legend("topright", legend = legend_labels, fill = c("lightblue", "lightgreen", "pink", "lavender"), xpd = TRUE,  c(-0.15, 0), cex = 0.5)
 
+#dev.off()
+```
+
+```{r}
+
+#jpeg("/Users/bellamullen/Documents/GITHUB/Findor2023_Replication/SRC/plots/dv_dist_group.jpeg", width = 1200, height = 600, res = 100)
+
+ggplot(s3, aes(x = E3, fill = group)) +
+  geom_bar(position = "dodge", color = "black") +
+  labs(title = "Support for Housing Project by Condition",
+       x = "Support for Housing Project",
+       y = "Count",
+       fill = "Group") +
+  scale_fill_manual(values = c("blue", "darkblue", "grey", "brown")) +
+  theme_minimal()
+
+#dev.off()
 ```
 
 ## Descriptives {.tabset}
@@ -476,5 +495,6 @@ summary(model_proportionality)
 ```
 
 ```{r}
-plot(s3$E3)
+str(s3$E3)
+
 ```

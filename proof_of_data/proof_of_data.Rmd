@@ -50,7 +50,7 @@ paste_na <- function(..., sep = " ") {
 ### Load Data for Study 2
 
 ```{r}
-s2 <- read_sav("/Users/bellamullen/Documents/GITHUB/replication_project/Study2.sav")
+s2 <- read_sav("/Users/bellamullen/Documents/GITHUB/Findor2023_Replication/original_materials/data/Study2.sav")
 head(s2)  # Preview first rows
 ```
 
