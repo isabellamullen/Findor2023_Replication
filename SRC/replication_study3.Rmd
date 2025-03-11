@@ -102,14 +102,14 @@ s3$income <- car::recode(s3$PINCOME,"'1'='below median';'2'='below median';'8'='
 counts <- table(s3$E3)
 par(mar = c(5, 4, 3, 10))
 
-barplot(counts, col = c("lightblue", "lightgreen", "pink", "lavender"), 
+barplot(counts, col = c("#577399", "grey", "#FE5F55", "#808080"), 
         main = "Distribution of Support for the Social Housing Project",
         xlab = "Support", ylab = "Frequency",
         border = "black")
 
 legend_labels <- c("1: completely disagree", "2", "3", "4: completely agree")
 
-legend("topright", legend = legend_labels, fill = c("lightblue", "lightgreen", "pink", "lavender"), xpd = TRUE,  c(-0.15, 0), cex = 0.5)
+legend("topright", legend = legend_labels, fill = c("#577399", "grey", "#FE5F55", "#808080"), xpd = TRUE,  c(-0.15, 0), cex = 0.5)
 
 #dev.off()
 ```
@@ -124,10 +124,13 @@ ggplot(s3, aes(x = E3, fill = group)) +
        x = "Support for Housing Project",
        y = "Count",
        fill = "Group") +
-  scale_fill_manual(values = c("blue", "darkblue", "grey", "brown")) +
+  scale_fill_manual(values = c("#FAA916", "#9AB87A", "grey", "#FE5F55")) +
   theme_minimal()
 
 #dev.off()
+```
+```{r}
+summary(s3$E3)
 ```
 
 ## Descriptives {.tabset}
@@ -491,10 +494,5 @@ model_proportionality <- train_polr_model("Proportionality")
 # Print model summaries
 summary(model_control)
 summary(model_proportionality)
-
-```
-
-```{r}
-str(s3$E3)
 
 ```
