@@ -120,26 +120,6 @@ knitr::kable(s3_personal, caption = "Study 3 - personal agreement")%>%
   kable_styling(full_width = F)
 ```
 
-```{r}
-source("https://gist.githubusercontent.com/benmarwick/2a1bb0133ff568cbe28d/raw/fb53bd97121f7f9ce947837ef1a4c65a73bffb3f/geom_flat_violin.R")
-
-raincloud_theme = theme(
-text = element_text(size = 11),
-axis.title.x = element_blank(),
-axis.title.y = element_text(size = 11),
-axis.text = element_text(size = 11),
-axis.text.x = element_text(vjust = 2),
-legend.title=element_text(size=15),
-legend.text=element_text(size=15),
-legend.position = "right",
-plot.title = element_text(lineheight=.7, face="bold", size = 15),
-panel.border = element_blank(),
-panel.grid.minor = element_blank(),
-panel.grid.major = element_blank(),
-axis.line.x = element_line(colour = 'black', size=0.5, linetype='solid'),
-axis.line.y = element_line(colour = 'black', size=0.5, linetype='solid'))
-```
-
 ## Main analysis - separate ordinal regression {.tabset}
 ```{r}
 #ordered logistic regression
@@ -162,25 +142,6 @@ p <- pnorm(abs(ctable[, "t value"]), lower.tail = FALSE) * 2
 (ctable <- cbind(ctable, "p value" = p))
 
 #Compute Confidence Intervals and Odds Ratios
-ci <- confint(s3personal)
-exp(cbind(OR = coef(s3personal), ci))
-
-```
-
-```{r}
-# Re-level to have Proportionality as baseline
-#Changes the baseline category from the default ("Control") to "Proportionality".
-#This allows all comparisons to be made against "Proportionality" instead of another group.
-
-s3$group <- relevel(s3$group, ref = "Proportionality")
-
-#logistic
-#Re-run Ordered Logistic Regression with New Baseline
-s3personal  <- polr(E3 ~ group, data = s3, Hess=TRUE)
-summary(s3personal)
-ctable <- coef(summary(s3personal))
-p <- pnorm(abs(ctable[, "t value"]), lower.tail = FALSE) * 2
-(ctable <- cbind(ctable, "p value" = p))
 ci <- confint(s3personal)
 exp(cbind(OR = coef(s3personal), ci))
 
