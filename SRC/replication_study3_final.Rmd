@@ -2,12 +2,15 @@
 title: "replication_study3_final"
 author: "Asad Tariq, Isabella Mullen"
 date: "`r Sys.Date()`"
-output: pdf_document
+output:
+  pdf_document:
+    latex_engine: xelatex
 ---
 
 ```{r setup, include=FALSE}
 
 knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(tidy.opts = list(width.cutoff = 60), tidy = TRUE)
 
 suppressMessages({
 library(rio)
@@ -52,7 +55,8 @@ s3$SIZE= factor(s3$SIZE, levels = c(1, 2,3,4,5), labels = c("less than 1k","1k-4
 s3$REG= factor(s3$REG, levels = c(1, 2,3,4,5,6,7,8), labels = c("Bratislavsky","Trnavsky","Trenciansky", "Nitriansky","Zilinsky","Banskobystricky","Presovsky","Kosicky"))
 
 
-s3$income <- car::recode(s3$PINCOME,"'1'='below median';'2'='below median';'8'='NA';'9'='NA'; else = 'above median'")
+s3$income <- car::recode(s3$PINCOME,"'1'='below median';'2'='below median';'8'='NA';'9'='NA';
+                         else = 'above median'")
 ```
 
 ## Visualization of Dependent Variable
@@ -163,10 +167,10 @@ mean(pred_alternate == factor(s3$E3, ordered = FALSE))
 # Binary outcome 1: E3 = 1 vs Others
 s3$E3_bin1 <- ifelse(s3$E3 == levels(s3$E3)[1], 1, 0)
 
-# Binary outcome 2: E3 ≤ 2 vs E3 ≥ 3
+# Binary outcome 2: E3 <= 2 vs E3 >= 3
 s3$E3_bin2 <- ifelse(s3$E3 %in% levels(s3$E3)[1:2], 1, 0)
 
-# Binary outcome 3: E3 ≤ 3 vs E3 = 4
+# Binary outcome 3: E3 <= 3 vs E3 = 4
 s3$E3_bin3 <- ifelse(s3$E3 %in% levels(s3$E3)[1:3], 1, 0)
 
 # Probabilities for each class
@@ -178,10 +182,10 @@ prob_alter <- predict(s3personal_alter, data = s3, type = "prob")
 # ROC for predicting E3 = 1
 roc_1_orig <- roc(s3$E3_bin1, prob_logit[, 1])
 
-# ROC for predicting E3 ≤ 2
+# ROC for predicting E3 <= 2
 roc_2_orig <- roc(s3$E3_bin2, prob_logit[, 1] + prob_logit[, 2])
 
-# ROC for predicting E3 ≤ 3
+# ROC for predicting E3 <= 3
 roc_3_orig <- roc(s3$E3_bin3, prob_logit[, 1] + prob_logit[, 2] +
                      prob_logit[, 3])
 
@@ -191,7 +195,7 @@ plot(roc_2_orig, col = "red", add = TRUE)
 plot(roc_3_orig, col = "green", add = TRUE)
 
 legend("bottomright", 
-       legend = c("E3 = 1", "E3 ≤ 2", "E3 ≤ 3"), 
+       legend = c("E3 = 1", "E3 <= 2", "E3 <= 3"), 
        col = c("blue", "red", "green"), lwd = 2)
 ```
 
@@ -199,10 +203,10 @@ legend("bottomright",
 # ROC for predicting E3 = 1
 roc_1_alter <- roc(s3$E3_bin1, prob_alter[, 1])
 
-# ROC for predicting E3 ≤ 2
+# ROC for predicting E3 <= 2
 roc_2_alter <- roc(s3$E3_bin2, prob_alter[, 1] + prob_alter[, 2])
 
-# ROC for predicting E3 ≤ 3
+# ROC for predicting E3 <= 3
 roc_3_alter <- roc(s3$E3_bin3, prob_alter[, 1] + prob_alter[, 2] +
                      prob_alter[, 3])
 
@@ -212,7 +216,7 @@ plot(roc_2_alter, col = "red", add = TRUE)
 plot(roc_3_alter, col = "green", add = TRUE)
 
 legend("bottomright", 
-       legend = c("E3 = 1", "E3 ≤ 2", "E3 ≤ 3"), 
+       legend = c("E3 = 1", "E3 <= 2", "E3 <= 3"), 
        col = c("blue", "red", "green"), lwd = 2)
 ```
 
