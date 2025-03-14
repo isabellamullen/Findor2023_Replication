@@ -445,3 +445,7 @@ legend(
 We used ChatGPT 4o LLM/AI tool in this report. We used this tool to understanding the author's original code. We also used ChatGPT to save time debugging our code, helping with latex formatting, and translating some of the original materials from Slovak to English. The tool was helpful and efficient for these tasks.
 
 [Click here to view my conversation with ChatGPT.](https://chatgpt.com/share/67d47a4f-e0d8-8004-8a43-8cba73891e43)
+
+ChatGPT 4o LLM/AI was also used to help interpret the calibration plot and ROC curves we made for the in-sample predictive performance of the two models. It helped us understand how the models perfomed for in-sample predictions compared to each other.
+
+[Click here to view my conversation with ChatGPT.](https://chatgpt.com/share/67d4a1ab-f9f4-8012-8bf6-c9248ddeb44c)
