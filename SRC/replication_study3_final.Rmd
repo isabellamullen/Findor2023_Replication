@@ -5,12 +5,13 @@ date: "`r Sys.Date()`"
 output:
   pdf_document:
     latex_engine: xelatex
+  word_document: default
 ---
 
 ```{r setup, include=FALSE}
 
 knitr::opts_chunk$set(echo = TRUE)
-knitr::opts_chunk$set(tidy.opts = list(width.cutoff = 60), tidy = TRUE)
+knitr::opts_chunk$set(tidy.opts = list(width.cutoff = 45), tidy = TRUE)
 
 suppressMessages({
 library(rio)
@@ -55,8 +56,9 @@ s3$SIZE= factor(s3$SIZE, levels = c(1, 2,3,4,5), labels = c("less than 1k","1k-4
 s3$REG= factor(s3$REG, levels = c(1, 2,3,4,5,6,7,8), labels = c("Bratislavsky","Trnavsky","Trenciansky", "Nitriansky","Zilinsky","Banskobystricky","Presovsky","Kosicky"))
 
 
-s3$income <- car::recode(s3$PINCOME,"'1'='below median';'2'='below median';'8'='NA';'9'='NA';
-                         else = 'above median'")
+s3$income <- car::recode(s3$PINCOME,
+                         "'1'='below median';'2'='below median';'8'='NA';
+                         '9'='NA'; else = 'above median'")
 ```
 
 ## Visualization of Dependent Variable
@@ -190,7 +192,8 @@ roc_3_orig <- roc(s3$E3_bin3, prob_logit[, 1] + prob_logit[, 2] +
                      prob_logit[, 3])
 
 plot(roc_1_orig, col = "blue",
-     main = "ROC Curves for Ordered Logistic Regression - Original Model")
+     main = "ROC Curves for Ordered Logistic Regression 
+     - Original Model")
 plot(roc_2_orig, col = "red", add = TRUE)
 plot(roc_3_orig, col = "green", add = TRUE)
 
@@ -211,7 +214,8 @@ roc_3_alter <- roc(s3$E3_bin3, prob_alter[, 1] + prob_alter[, 2] +
                      prob_alter[, 3])
 
 plot(roc_1_alter, col = "blue",
-     main = "ROC Curves for Ordered Logistic Regression - Alternate Model")
+     main = "ROC Curves for Ordered Logistic Regression
+     - Alternate Model")
 plot(roc_2_alter, col = "red", add = TRUE)
 plot(roc_3_alter, col = "green", add = TRUE)
 
