@@ -138,6 +138,7 @@ The alternate model we considered was the following:
 polr(E3 \sim group + AGE + EDU + SEX + REG)
 \end{equation}
 
+\justify
 We chose this model for two main reasons: we wanted to determine if the addition of demographic variables would incur a change in the predictions for the dependent variable, and whether a more complex model (with a greater number of predictors) would perform better than a simpler model (with just one predictor).
 
 \justify
@@ -148,10 +149,10 @@ See the regression table (Table \ref{table:alterregresstable}) on page \pageref{
 We began by comparing the two models using the Akaike Information Criterion (AIC) and Bayesian Information Criterion (BIC) metrics, the results of which are shown in Table \ref{table:aicbictable} on page \pageref{table:aicbictable}. Using the AIC metric, we observed that the alternative model outperformed the original model, with an AIC value of 2644 compared to 2694 for the original. This indicated that it provides a better fit to the data while balancing the complexity of the model.
 
 \justify
-Next, we constructed a calibration plot (Figure \ref{fig:calib_plot}) to compare the prediction probabilities of each model. The calibration plot provided a visual representation of how well the predicted probabilities of two models, 'alter' (red) and 'logit' (blue), align with the observed outcomes for a four-category variable. The 'logit' model was the original model. Each vertical strip on the x-axis corresponded to one of the four observed categories, while the y-axis represents the predicted probability assigned by each model to the observed outcome. Ideally, a well-calibrated model should have assigned high probabilities (close to 1) to the correct category and low probabilities to the incorrect categories.
+Next, a calibration plot (Figure \ref{fig:calib_plot}) was made to compare the prediction probabilities of each model. The calibration plot visually represented how well the predicted probabilities of two models, 'alter' (red) and 'logit' (blue), align with the observed outcomes for the dependent variable. The 'logit' model was the original model. Each vertical strip on the x-axis corresponded to one of the four observed categories, while the y-axis represents the predicted probability of the observed outcome of each model. Ideally, a well-calibrated model should have assigned high probabilities (close to 1) to the correct category and low probabilities to the incorrect categories.
 
 \justify
-The smooth trend lines further highlighted systematic differences between the models. If a model were perfectly calibrated, the probabilities would align closely with the observed outcomes, but the plot suggests systematic miscalibration in both models. The fact that the probabilities did not cluster near 1.0 for the observed outcomes suggested that both models underpredicted the true category probabilities. This may have indicated underlying issues such as class imbalance or overregularization.
+The smooth trend lines further highlighted the systematic differences between the models. The fact that the probabilities did not cluster near 1.0 for the observed outcomes suggested that both models did not predict the true category probabilities well. This may have indicated underlying issues such as class imbalance or over-regularization.
 
 \begin{figure}[H]
     \centering
@@ -161,10 +162,10 @@ The smooth trend lines further highlighted systematic differences between the mo
 \end{figure}
 
 \justify
-We then performed a likelihood ratio test to determine whether our alternate model provided a better fit to the data. The key result (as shown in Table \ref{table:aicbictable}) was an extremely small p-value for the test, $5.3 \times 10^{-12}$, giving us a strong indication that, despite having additional parameters and complexity, the alternate model is significantly better at fitting the data compared to the original.
+We then performed a likelihood ratio test to determine whether our alternate model provided a better fit to the data. The p-value obtained (as shown in Table \ref{table:aicbictable}) was extremely small, giving a strong indication that, despite having additional parameters and complexity, the alternate model is significantly better at fitting the data compared to the original.
 
 \justify
-Lastly, we plotted the ROC curves to compare the in-sample performance of the two models. Figure \ref{fig:roc_orig} representing the original model, showed ROC curves that closely follow the diagonal reference line. This indicated poor predictive performance. The model’s ability to distinguish between different classes was weak, as the curves did not significantly rise above the diagonal.
+Lastly, we plotted the ROC curves of the two models. Figure \ref{fig:roc_orig} representing the original model, showed ROC curves that closely follow the diagonal reference line. This indicated poor predictive performance. The model’s ability to distinguish between different classes was weak, as the curves did not significantly rise above the diagonal.
 
 \newgeometry{top=1.5cm,bottom=1.5cm}
 
@@ -183,17 +184,20 @@ Lastly, we plotted the ROC curves to compare the in-sample performance of the tw
 \end{figure}
 
 \justify
-Comparatively, ROC curves in Figure \ref{fig:roc_alter}, for the alternate model, consistently rose above the diagonal, indicating better sensitivity-specificity trade-offs. This suggested that the alternate model had a stronger discriminatory ability, as its ROC curves are farther from the diagonal and exhibit a greater area under the curve (AUC). The separation between the colored curves for different threshold values of E3 also appeared to be more distinct in the alternate model, suggesting that it provided better differentiation between the ordered categories.
+Comparatively, the ROC curves in Figure \ref{fig:roc_alter}, for the alternate model, were further above the diagonal, indicating better sensitivity-specificity trade-offs. This suggested that the alternate model was stronger at discriminating, as its ROC curves are farther from the diagonal and have a larger area under the curve (AUC). The separation between the curves for different threshold values of E3 were also more distinct in the alternate model, suggesting that it provided better differentiation between the ordered categories.
 
 \justify
-Overall, the alternate model demonstrated improved classification performance compared to the original model, as indicated by the increased sensitivity and specificity at different threshold levels. This suggested that the modifications made in the alternate model resulted in a better ability to predict the ordered outcomes.
+Overall, the alternate model demonstrated improved classification performance compared to the original model, and hence, the modifications made in the alternate model resulted in a better ability to predict the ordered outcomes.
 
 \subsubsection{Out-of-sample Predictive Performance}
 
-To evaluate the out-of-sample predictive performance of the two proportional odds logistic regression models we performed 10-fold cross-validation. To perform cross-validation the dataset was split into 10 equally sized folds (subsets). Each of these folds were used as a test set while the left over 9 folds were used in the training set. This process was repeated 10 times, ensuring that each observation appeared in the test set only once. The aim of both models was to predict the ordinal outcome variable E3, which had four ordered classes (1, 2, 3, 4). The results are shown in Table \ref{tab:cv} below.
+To evaluate the out-of-sample predictive performance of the two proportional odds logistic regression models, we performed a 10-fold cross-validation. To perform cross-validation the dataset was split into 10 equally sized folds (subsets). Each of these folds were used as a test set while the left over 9 folds were used in the training set. This process was repeated 10 times, ensuring that each observation appeared in the test set only once. The aim of both models was to predict the ordinal outcome variable E3. The results are shown in Table \ref{tab:cv} below.
 
 \justify
-The models were evaluated with each link function on the basis of their accuracy obtained from the cross-validation results. The purpose of checking the accuracy of cross-validation across different link functions was to determine which link function best fits the relationship between the predictor variables and the ordinal outcome (E3). For the original model, the proportion of correctly classified observations remained consistent at $0.376$ across all five link functions: cauchit, cloglog, logistic, loglog, and probit. This indicated that the model was no better than making predictions by randomly guessing. On the other hand, our alternative model showed some improvements over the original, achieving better accuracy with the cloglog link function, which was chosen for the final model, yielding an accuracy of $0.390$.
+The models were then evaluated with each link function on the basis of their accuracy obtained from the cross-validation results. The purpose of checking the accuracy of cross-validation across different link functions was to determine which link function best fits the relationship between the predictor variables and the ordinal outcome (E3).
+
+\justify
+For the original model, the accuracy remained consistent at $0.376$ across all five link functions: cauchit, cloglog, logistic, loglog, and probit. This indicated that there was no change in the predictions of the model regardless of which link function was chosen. On the other hand, our alternative model showed some improvements over the original, achieving better accuracy with the cloglog link function, which was chosen for the final model, yielding an accuracy of $0.390$.
 
 \begin{table}[!htbp] \centering 
   \caption{Cross-Validation Results} 
@@ -222,7 +226,7 @@ The models were evaluated with each link function on the basis of their accuracy
 Before building a scenario by manually specifying the predictor values to investigate how one particular independent variable impacted our dependent variable, we wanted to look at how age and region in particular relate to the personal willingness to support the social housing project. 
 
 \justify
-Figure \ref{fig:age_effect} illustrated the effect of age on personal willingness to support the social housing project, measured at four levels of willingness (E3 = 1 to 4). Each panel represented a different level of support, with the x-axis showing age, and the y-axis displaying the predicted probability of selecting that level. The solid blue lines represented the estimated effect of age, while the shaded areas indicated confidence intervals.
+Figure \ref{fig:age_effect} illustrated the effect of age on personal willingness to support the social housing project, measured at four levels of willingness (E3 = 1 to 4). Each panel represented a different level of support, with age on the x-axis, and the predicted probabilities on the y-axis.
 
 \begin{figure}[H]
     \centering
@@ -232,15 +236,12 @@ Figure \ref{fig:age_effect} illustrated the effect of age on personal willingnes
 \end{figure}
 
 \justify
-From the figure, we observed that people who were most supportive of the project (E3 = 4) tended to show a slight increase in the probability of support as they aged, suggesting that older individuals were somewhat more likely to express strong support. A similar, though less pronounced, trend was observed for moderate support (E3 = 3), where the probability remained relatively stable, but exhibits a small upward trend with age.
+From the figure, we can see that people who were most supportive of the project (E3 = 4) tended to show a slight increase in the probability of support as they aged. Which means that older individuals were more likely to express strong support. Conversely, individuals with lower levels of support (E3 = 2 and E3 = 1) showed a decrease in the probability of support with age. Which means that younger individuals were more likely to oppose the housing project compared to older individuals.
 
 \restoregeometry
 
 \justify
-In contrast, for individuals with lower levels of support (E3 = 2 and E3 = 1), the effect of age moves in the opposite direction. The probability of weak support (E3 = 2) decreases slightly with age, while the probability of complete opposition (E3 = 1) shows a more noticeable downward trend, indicating that younger individuals were more likely to express opposition to the project compared to older individuals.
-
-\justify
-Figure \ref{fig:reg_effect} presented the estimated effect of region (REG) on personal willingness to support the social housing project (E3), with probabilities plotted across different regional categories. Each panel corresponds to a different level of willingness (E3 = 1 to 4), allowing for a comparative assessment of regional variations in support. The blue dots represent predicted probabilities, while the accompanying orange error bars indicated confidence intervals, reflecting the uncertainty in these estimates.
+Figure \ref{fig:reg_effect} presented the estimated effect of region (REG) on personal willingness to support the social housing project (E3), with regions on the x-axis. Each panel corresponds to a different level of willingness (E3 = 1 to 4). The blue points represent predicted probabilities, while the accompanying orange error bars indicated confidence intervals, for the uncertainty in these estimates.
 
 \begin{figure}[H]
     \centering
@@ -250,13 +251,13 @@ Figure \ref{fig:reg_effect} presented the estimated effect of region (REG) on pe
 \end{figure}
 
 \justify
-A clear pattern emerged where the probability of strong support (E3 = 4) fluctuated between regions, with Zilinskii and Nitrianskii exhibiting relatively higher probabilities, while Kosicky demonstrated a lower probability of strong support. In contrast, opposition to the project (E3 = 1) followed an inverse pattern, with higher probabilities observed in Nitriansky and Kosicky, suggesting greater regional resistance to the initiative. The probability of moderate support (E3 = 3) remained largely stable across regions, indicating that regional differences may have exerted a stronger influence on extreme positions (strong support or strong opposition) rather than moderate preferences.
+We can see that the probability of strong support (E3 = 4) fluctuated between regions, with Zilinskii and Nitrianskii having relatively higher probabilities. Conversely, Kosicky had a lower probability of strong support. In contrast, opposition to the project (E3 = 1) followed an opposite pattern, with higher probabilities observed in Nitriansky and Kosicky. This suggests greater regional resistance to the initiative. The probability of moderate support (E3 = 3) remained largely stable across regions.
 
 \justify
-These findings suggested that regional context played a role in shaping attitudes toward social housing, potentially reflecting underlying socioeconomic, political, or cultural differences across regions. However, the relatively modest variation, coupled with the overlapping confidence intervals, implied that while regional effects were present, they may not have been the dominant factor driving individual support for the project. Further investigation incorporating additional covariates—such as economic conditions, political affiliation, or prior exposure to social housing policies—could have provided a more comprehensive understanding of the mechanisms driving these regional disparities.
+These findings suggested that regional context played a role in shaping attitudes toward social housing, potentially reflecting underlying socioeconomic, political, or cultural differences across regions.
 
 \justify
-The density plot below (Figure \ref{fig:qoi}) visualized the implied effect of regional differences (Bratislavsky vs. Zilinsky) on personal agreement with the construction of an apartment (E3). The x-axis represented the change in predicted probability of different levels of agreement due to the regional difference, while the y-axis showed the density of these estimated probability shifts.
+Moving on to a particular scenario, the density plot below (Figure \ref{fig:qoi}) visualized the implied effect of regional differences (Bratislavsky vs. Zilinsky) on personal agreement with the construction of an apartment (E3). The x-axis represented the change in predicted probability of different levels of agreement due to the regional difference, while the y-axis showed the density of these estimated probability shifts.
 
 \begin{figure}[H]
     \centering
@@ -266,10 +267,13 @@ The density plot below (Figure \ref{fig:qoi}) visualized the implied effect of r
 \end{figure}
 
 \justify
-The densities were centered around zero, suggesting that the difference in predicted probabilities between Bratislavsky and Zilinsky was relatively small across all agreement levels. However, E3 = 1 (strong opposition) and E3 = 4 (strong support) exhibited some spread, indicating that regional differences might have had a modest influence on individuals with extreme opinions. Specifically, the density for E3 = 4 (strong support) skewed slightly negative, implying that respondents from Zilinsky might have been less likely to strongly support the construction compared to those from Bratislavsky. Conversely, E3 = 1 (strong opposition) had a slight positive shift, suggesting that opposition could have been somewhat higher in Zilinsky.
+The densities can be seen to be centered around zero, suggesting that the difference in predicted probabilities between Bratislavsky and Zilinsky was relatively small across all agreement levels. However, there was a bit of spread for E3 = 1 (strong opposition) and E3 = 4 (strong support). This indicated that regional differences might have had a modest influence on individuals with extreme opinions.
 
 \justify
-Overall, while the results indicated that regional differences existed, their magnitude appeared limited, as most density curves remained close to zero. This suggested that factors beyond just the region—such as demographic, socioeconomic, or attitudinal variables—were likely playing a more significant role in shaping individual agreement levels.
+Specifically, the density for E3 = 4 (strong support) skewed slightly negative, implying that respondents from Zilinsky might have been less likely to strongly support the construction compared to those from Bratislavsky. On the other hand, E3 = 1 (strong opposition) had a slight positive shift, suggesting that opposition could have been a little bit higher in Zilinsky.
+
+\justify
+Overall, the magnitude of these changes were limited, as most density curves remained close to zero. This suggested that factors beyond just the region could also be playing a role in shaping individual agreement levels.
 
 \subsubsection{Preferred Model}
 Based on the in-sample and out-of-sample predictive performance of each model, we concluded that our alternative model performed better at fitting and predicting the data. Additionally, it included demographic predictor variables that provided contextual insight and an advantage over the original model of the authors.
