@@ -11,6 +11,7 @@
 \usepackage{float}
 \usepackage{ragged2e}
 \usepackage{hyperref}
+\usepackage{harvard}
 
 \title{Findor et al.(2023) Replication}
 \author{Asad Tariq and Isabella Mullen}
@@ -35,7 +36,7 @@ The original paper used an ordered logistic regression model to infer the effect
 
 \section{Original Paper}
 \subsection{Design Overview: Study 3}
-For this project we chose to replicate Study 3 from the original paper. The experiment was between-subjects with a control group and three treatment conditions (equality, reciprocity, and need). Each participant read a control paragraph describing a fictional village with a Roma settlement where a new apartment building could be built. The scenario explained that the new housing was for the poorest inhabitants of the Roma settlement and that they would be required to pay rent. It also stated that 95\% of the funding came from EU funds, while the remaining 5\% came from the municipality. Participants in the treatment groups were then randomly assigned an additional paragraph corresponding to one of the treatment conditions: equality, reciprocity, or need. In the equality condition, the same amount of money was allocated to projects intended for the non-Roma community. In the reciprocity condition was that only those who worked on the construction of the building could live there. And in the need treatment was that only those who needed the most assistance could live there. After reading the scenarios, participants answered whether they agreed or disagreed with the project on a scale from 1 (“strongly disagree”) to 4 (“strongly agree”). Additional questions were asked but they were not relevant to this replication project.
+For this project we chose to replicate Study 3 from the original paper (Findor et al. 2023). The experiment was between-subjects with a control group and three treatment conditions (equality, reciprocity, and need). Each participant read a control paragraph describing a fictional village with a Roma settlement where a new apartment building could be built. The scenario explained that the new housing was for the poorest inhabitants of the Roma settlement and that they would be required to pay rent. It also stated that 95\% of the funding came from EU funds, while the remaining 5\% came from the municipality. Participants in the treatment groups were then randomly assigned an additional paragraph corresponding to one of the treatment conditions: equality, reciprocity, or need. In the equality condition, the same amount of money was allocated to projects intended for the non-Roma community. In the reciprocity condition was that only those who worked on the construction of the building could live there. And in the need treatment was that only those who needed the most assistance could live there. After reading the scenarios, participants answered whether they agreed or disagreed with the project on a scale from 1 (“strongly disagree”) to 4 (“strongly agree”). Additional questions were asked but they were not relevant to this replication project.
 
 \justify
 The unit of analysis was an individual-level respondent. The sample size for Study 3 consisted of 1,009 survey respondents. This sample was meant to be a nationally representative sample of Slovaks. The original researchers set quotas on gender, age, region, municipality size, and education. The final sample for Study 3 was 52\% female, with a median age of 44.7. The respondents were randomly recruited through an online platform. The survey participants opted in to an online survey, were aware that they were participating in a research study, and were compensated for their time.
@@ -76,10 +77,7 @@ The dependent variable in Study 3 was the willingness to support the social hous
 \end{table}
 
 \justify
-Note: We replicated the results from this table in the original paper (Table A19), except for the kurtosis values. We assumed that this discrepancy was due to the use of a different R function or a different definition of kurtosis. Since this value was not relevant to the scope of this project, we left the values as is. The values included in Table 1 are our calculations.
-
-\justify
-Figure 1 displayed the overall distribution of the dependent variable for all respondents. The x-axis represented levels of support, ranging from 1 ("completely disagree") to 4 ("completely agree"), while the y-axis represented the frequency of responses. The highest frequency was observed at level 3 ("agree"), followed by levels 1 ("completely disagree") and 4 ("completely agree"), with level 2 being the least common response.
+Note: We replicated the results from this table in the original paper (Findor et al. 2023) (Table A19), except for the kurtosis values. We assumed that this discrepancy was due to the use of a different R function or a different definition of kurtosis. Since this value was not relevant to the scope of this project, we left the values as is. The values included in Table 1 are our calculations.
 
 \begin{figure}[H]
     \centering
@@ -89,7 +87,10 @@ Figure 1 displayed the overall distribution of the dependent variable for all re
 \end{figure}
 
 \justify
-Figure 2 provided a breakdown of the support for the housing project by condition (control, equality, proportionality, and need). Each bar represented the number of respondents who selected a given level of support, with the colors indicating the experimental group. The proportionality (reciprocity) condition appeared to generate the highest level of support compared to the other groups, while the need frame showed a higher proportion of disagreement than the other conditions. The control and equality conditions displayed relatively balanced distributions.
+Figure \ref{fig:dv} displayed the overall distribution of the dependent variable for all respondents. The x-axis represented levels of support, ranging from 1 ("completely disagree") to 4 ("completely agree"), while the y-axis represented the frequency of responses. The highest frequency was observed at level 3 ("agree"), followed by levels 1 ("completely disagree") and 4 ("completely agree"), with level 2 being the least common response.
+
+\justify
+Figure \ref{fig:dv_group} provided a breakdown of the support for the housing project by condition (control, equality, proportionality, and need). Each bar represented the number of respondents who selected a given level of support, with the colors indicating the experimental group. The proportionality (reciprocity) condition appeared to generate the highest level of support compared to the other groups, while the need frame showed a higher proportion of disagreement than the other conditions. The control and equality conditions displayed relatively balanced distributions.
 
 \begin{figure}[H]
     \centering
@@ -165,9 +166,6 @@ We then performed a likelihood ratio test to determine whether our alternate mod
 \justify
 Lastly, we plotted the ROC curves to compare the in-sample performance of the two models. Figure \ref{fig:roc_orig} representing the original model, showed ROC curves that closely follow the diagonal reference line. This indicated poor predictive performance. The model’s ability to distinguish between different classes was weak, as the curves did not significantly rise above the diagonal.
 
-\justify
-Comparatively, ROC curves in Figure \ref{fig:roc_alter}, for the alternate model, consistently rose above the diagonal, indicating better sensitivity-specificity trade-offs. This suggested that the alternate model had a stronger discriminatory ability, as its ROC curves are farther from the diagonal and exhibit a greater area under the curve (AUC). The separation between the colored curves for different threshold values of E3 also appeared to be more distinct in the alternate model, suggesting that it provided better differentiation between the ordered categories.
-
 \newgeometry{top=1.5cm,bottom=1.5cm}
 
 \begin{figure}[H]
@@ -177,9 +175,6 @@ Comparatively, ROC curves in Figure \ref{fig:roc_alter}, for the alternate model
     \label{fig:roc_orig}
 \end{figure}
 
-\justify
-Overall, the alternate model demonstrated improved classification performance compared to the original model, as indicated by the increased sensitivity and specificity at different threshold levels. This suggested that the modifications made in the alternate model resulted in a better ability to predict the ordered outcomes.
-
 \begin{figure}[H]
     \centering
     \includegraphics[width=\textwidth]{images/roc_alternate.png}
@@ -187,19 +182,22 @@ Overall, the alternate model demonstrated improved classification performance co
     \label{fig:roc_alter}
 \end{figure}
 
-\newpage
-\restoregeometry
+\justify
+Comparatively, ROC curves in Figure \ref{fig:roc_alter}, for the alternate model, consistently rose above the diagonal, indicating better sensitivity-specificity trade-offs. This suggested that the alternate model had a stronger discriminatory ability, as its ROC curves are farther from the diagonal and exhibit a greater area under the curve (AUC). The separation between the colored curves for different threshold values of E3 also appeared to be more distinct in the alternate model, suggesting that it provided better differentiation between the ordered categories.
+
+\justify
+Overall, the alternate model demonstrated improved classification performance compared to the original model, as indicated by the increased sensitivity and specificity at different threshold levels. This suggested that the modifications made in the alternate model resulted in a better ability to predict the ordered outcomes.
 
 \subsubsection{Out-of-sample Predictive Performance}
 
-To evaluate the out-of-sample predictive performance of the two proportional odds logistic regression models we performed 10-fold cross-validation. To perform cross-validation the dataset was split into 10 equally sized folds (subsets). Each of these folds were used as a test set while the left over 9 folds were used in the training set. This process was repeated 10 times, ensuring that each observation appeared in the test set only once. The aim of both models was to predict the ordinal outcome variable E3, which had four ordered classes (1, 2, 3, 4).
+To evaluate the out-of-sample predictive performance of the two proportional odds logistic regression models we performed 10-fold cross-validation. To perform cross-validation the dataset was split into 10 equally sized folds (subsets). Each of these folds were used as a test set while the left over 9 folds were used in the training set. This process was repeated 10 times, ensuring that each observation appeared in the test set only once. The aim of both models was to predict the ordinal outcome variable E3, which had four ordered classes (1, 2, 3, 4). The results are shown in Table \ref{tab:cv} below.
 
 \justify
 The models were evaluated with each link function on the basis of their accuracy obtained from the cross-validation results. The purpose of checking the accuracy of cross-validation across different link functions was to determine which link function best fits the relationship between the predictor variables and the ordinal outcome (E3). For the original model, the proportion of correctly classified observations remained consistent at $0.376$ across all five link functions: cauchit, cloglog, logistic, loglog, and probit. This indicated that the model was no better than making predictions by randomly guessing. On the other hand, our alternative model showed some improvements over the original, achieving better accuracy with the cloglog link function, which was chosen for the final model, yielding an accuracy of $0.390$.
 
 \begin{table}[!htbp] \centering 
   \caption{Cross-Validation Results} 
-  \label{} 
+  \label{tab:cv} 
 \begin{tabular}{@{\extracolsep{5pt}} cccccc} 
 \\[-1.8ex]\hline 
 \hline \\[-1.8ex] 
@@ -235,6 +233,8 @@ Figure \ref{fig:age_effect} illustrated the effect of age on personal willingnes
 
 \justify
 From the figure, we observed that people who were most supportive of the project (E3 = 4) tended to show a slight increase in the probability of support as they aged, suggesting that older individuals were somewhat more likely to express strong support. A similar, though less pronounced, trend was observed for moderate support (E3 = 3), where the probability remained relatively stable, but exhibits a small upward trend with age.
+
+\restoregeometry
 
 \justify
 In contrast, for individuals with lower levels of support (E3 = 2 and E3 = 1), the effect of age moves in the opposite direction. The probability of weak support (E3 = 2) decreases slightly with age, while the probability of complete opposition (E3 = 1) shows a more noticeable downward trend, indicating that younger individuals were more likely to express opposition to the project compared to older individuals.
@@ -426,5 +426,9 @@ We used ChatGPT 4o LLM/AI tool in this report. We used this tool to understand t
 
 \justify
 Please click \href{https://chatgpt.com/share/67d47a4f-e0d8-8004-8a43-8cba73891e43}{here} \href{https://chatgpt.com/share/67d4a1ab-f9f4-8012-8bf6-c9248ddeb44c}{and here} to view the conversations we had with ChatGPT.
+
+\section*{References}
+
+Findor, Andrej, Matej Hruška, Roman Hlatky, Tomáš Hrustič, and Zuzana Bošeľová. 2023. “Equality, Reciprocity, or Need? Bolstering Welfare Policy Support for Marginalized Groups with Distributive Fairness.” American Political Science Review 117(3): 805–21. doi:10.1017/S0003055422001046.
 
 \end{document}
