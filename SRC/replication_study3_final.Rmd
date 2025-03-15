@@ -28,6 +28,7 @@ library(nnet)
 library(marginaleffects)
 library(lmtest)
 library(effects)
+library(stargazer)
 library(generalhoslem)
 })
 
@@ -124,15 +125,17 @@ exp(cbind(OR = coef(s3personal), ci))
 
 ```{r}
 # Re-level to have Proportionality as baseline
+# We comment out this code as re-leveling to another base line impacts the
+# subsequent plots
 
-s3$group <- relevel(s3$group, ref = "Proportionality")
-s3personal  <- polr(E3 ~ group, data = s3, Hess=TRUE)
-summary(s3personal)
-ctable <- coef(summary(s3personal))
-p <- pnorm(abs(ctable[, "t value"]), lower.tail = FALSE) * 2
-(ctable <- cbind(ctable, "p value" = p))
-ci <- confint(s3personal)
-exp(cbind(OR = coef(s3personal), ci))
+# s3$group <- relevel(s3$group, ref = "Proportionality")
+# s3personal  <- polr(E3 ~ group, data = s3, Hess=TRUE)
+# summary(s3personal)
+# ctable <- coef(summary(s3personal))
+# p <- pnorm(abs(ctable[, "t value"]), lower.tail = FALSE) * 2
+# (ctable <- cbind(ctable, "p value" = p))
+# ci <- confint(s3personal)
+# exp(cbind(OR = coef(s3personal), ci))
 ```
 
 ## Alternate Model
@@ -339,8 +342,6 @@ alter_summary <- data.frame(
 # Combine results
 cv_results <- rbind(logit_summary, alter_summary)
 
-# Display using stargazer
-library(stargazer)
 stargazer(cv_results, summary = FALSE, title = "Cross-Validation Results",
           type = "text")
 ```
