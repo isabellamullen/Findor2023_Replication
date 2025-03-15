@@ -122,6 +122,19 @@ ci <- confint(s3personal)
 exp(cbind(OR = coef(s3personal), ci))
 ```
 
+```{r}
+# Re-level to have Proportionality as baseline
+
+s3$group <- relevel(s3$group, ref = "Proportionality")
+s3personal  <- polr(E3 ~ group, data = s3, Hess=TRUE)
+summary(s3personal)
+ctable <- coef(summary(s3personal))
+p <- pnorm(abs(ctable[, "t value"]), lower.tail = FALSE) * 2
+(ctable <- cbind(ctable, "p value" = p))
+ci <- confint(s3personal)
+exp(cbind(OR = coef(s3personal), ci))
+```
+
 ## Alternate Model
 
 ```{r}
